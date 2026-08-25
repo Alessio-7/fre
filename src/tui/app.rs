@@ -1,8 +1,8 @@
 use super::widgets::{DirWidget, PreviewWidget};
 use crate::util::path_manager::PathManager;
-use color_eyre::Result;
+use color_eyre::{Result, eyre::Error};
 use crossterm::event::{self, KeyCode};
-use ratatui::{DefaultTerminal, Frame, layout::Constraint, layout::Layout};
+use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Layout}, style::Stylize, widgets::{Block, Paragraph, Widget}};
 
 #[derive(Debug)]
 pub struct App {
@@ -27,15 +27,37 @@ impl Default for App {
 
 impl App {
     /// runs the application's main loop until the user quits
-    pub fn run(&mut self, terminal: &mut DefaultTerminal, path: String) -> Result<()> {
+    pub fn run(&mut self, terminal: &mut DefaultTerminal, path: String) -> Result<()>{
         self.path_manager.load_path(path)?;
         self.update_widgets();
 
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_events()?;
+            let r = self.handle_events();
+            if r.is_err(){
+                terminal.draw(
+                    |frame|
+                    self.draw_error(frame, r.err().unwrap())
+                )?;
+
+            }
         }
+
         Ok(())
+    }
+
+    fn draw_error(&self, frame: &mut Frame, e: Error){
+        let popup_area = frame.area()
+                               .centered(
+                                Constraint::Ratio(1, 2),
+                                 Constraint::Ratio(1, 2)
+                                );
+        let block = Block::bordered().on_black().title("Error");
+        let par = Paragraph::new(e.to_string());
+        frame.render_widget(par, block.inner(popup_area));
+        frame.render_widget(block, popup_area);
+
+
     }
 
     fn draw(&self, frame: &mut Frame) {
@@ -65,7 +87,7 @@ impl App {
                     self.update_widgets();
                 }
                 KeyCode::Right => {
-                    self.path_manager.right();
+                    self.path_manager.right()?;
                     self.update_widgets();
                 }
                 KeyCode::Char('q') | KeyCode::Esc => {

@@ -9,7 +9,7 @@ fn sort(mut v: Vec<(FileType, String)>) -> Vec<(FileType, String)>{
 #[derive(Debug, Default)]
 pub struct PathManager {
     reader: Reader,
-    path: String,
+    pub path: String,
     pub selected_index: usize,
     dir_list: Vec<(FileType, String)>,
 }
@@ -17,13 +17,13 @@ pub struct PathManager {
 impl PathManager {
 
     pub fn load_path(&mut self, path: String) -> Result<()> {
+        self.dir_list = sort(self.reader.read_from_path(&path)?);
         self.path = path;
-        self.dir_list = sort(self.reader.read_from_path(&self.path)?);
         Ok(())
         //TODO immagazina tutte le altre informazioni
     }
 
-    fn get_selected_path(&self) -> &(FileType, String) {
+    fn get_selected_file(&self) -> &(FileType, String) {
         self.dir_list
             .get(self.selected_index)
             .expect("è successo qualcosa che non doveva succedere")
@@ -34,7 +34,7 @@ impl PathManager {
     }
 
     pub fn get_file_preview(&self) -> (FileType, String) {
-        self.reader.read_file(&self.get_selected_path().1)
+        self.reader.read_file(&self.get_selected_file().1)
     }
 
     pub fn up(&mut self) {
@@ -53,6 +53,27 @@ impl PathManager {
     }
 
     pub fn left(&mut self) -> Result<()> {
+        if self.path == "/"{
+            return Ok(())
+        }
+
+        let p: &str;
+        if self.path.ends_with('/') {
+            p = self.path.get(..self.path.len()-1).unwrap();
+        } else {
+            p = &self.path;
+        }
+        let i = p.rfind('/').unwrap();
+        let pnew = self.path.get(..i).unwrap().to_string();
+        if pnew.is_empty(){
+            self.load_path("/".to_string())?;
+        }else {
+            self.load_path(pnew)?;    
+        }
+        Ok(())
+    }
+
+    pub fn right(&mut self) -> Result<()> {
         let t = &self.dir_list.get(self.selected_index);
         if t.is_some_and(|t| t.0 == FileType::Dir) {
             let p = format!("{}/{}", self.path, &t.unwrap().1);
@@ -60,6 +81,4 @@ impl PathManager {
         }
         Ok(())
     }
-
-    pub fn right(&mut self) {}
 }
