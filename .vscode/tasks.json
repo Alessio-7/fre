@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Project",
+      "type": "shell",
+      "command": "kitty --title \"bigfloat\" sh -c \"cargo run -p fre\"",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
