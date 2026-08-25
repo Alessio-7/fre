@@ -1,29 +1,30 @@
-use super::reader::Reader;
-use std::fs::FileType;
+use super::reader::{FileType, Reader};
+use color_eyre::Result;
 
 #[derive(Debug, Default)]
 pub struct PathManager {
     reader: Reader,
     path: String,
-    selected_index: usize,
+    pub selected_index: usize,
     dir_list: Vec<(FileType, String)>,
 }
 
 impl PathManager {
-    pub fn load_path(&mut self, path: String) {
+    pub fn load_path(&mut self, path: String) -> Result<()> {
         self.path = path;
-        self.dir_list = self.reader.read_from_path(&self.path);
-        //TODO call reader
+        self.dir_list = self.reader.read_from_path(&self.path)?;
+        Ok(())
+        //TODO immagazina tutte le altre informazioni
     }
 
-    fn get_selected_path(&self) -> &(FileType, String){
+    fn get_selected_path(&self) -> &(FileType, String) {
         self.dir_list
             .get(self.selected_index)
             .expect("è successo qualcosa che non doveva succedere")
     }
 
-    pub fn get_dir_list(&self) -> *const Vec<(FileType, String)> {
-        todo!("get dir list")
+    pub fn get_dir_list(&self) -> &Vec<(FileType, String)> {
+        &self.dir_list
     }
 
     pub fn get_file_preview(&self) -> (FileType, String) {
@@ -31,19 +32,27 @@ impl PathManager {
     }
 
     pub fn up(&mut self) {
-        self.selected_index = (self.selected_index - 1).clamp(0, self.dir_list.len());
+        if self.selected_index == 0 {
+            self.selected_index = self.dir_list.len() - 1
+        } else {
+            self.selected_index -= 1
+        }
     }
 
     pub fn down(&mut self) {
-        self.selected_index = (self.selected_index + 1).clamp(0, self.dir_list.len());
+        self.selected_index += 1;
+        if self.selected_index >= self.dir_list.len() {
+            self.selected_index = 0;
+        }
     }
 
-    pub fn left(&mut self) {
+    pub fn left(&mut self) -> Result<()> {
         let t = &self.dir_list.get(self.selected_index);
-        if t.is_some_and(|t| t.0.is_dir()) {
+        if t.is_some_and(|t| t.0 == FileType::Dir) {
             let p = format!("{}/{}", self.path, &t.unwrap().1);
-            self.load_path(p);
+            self.load_path(p)?;
         }
+        Ok(())
     }
 
     pub fn right(&mut self) {}

@@ -30,7 +30,8 @@ impl Default for App {
 impl App {
     /// runs the application's main loop until the user quits
     pub fn run(&mut self, terminal: &mut DefaultTerminal, path: String) -> Result<()> {
-        self.path_manager.load_path(path);
+        self.path_manager.load_path(path)?;
+        self.update_widgets();
 
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
@@ -62,7 +63,7 @@ impl App {
                     self.update_widgets();
                 }
                 KeyCode::Left => {
-                    self.path_manager.left();
+                    self.path_manager.left()?;
                     self.update_widgets();
                 }
                 KeyCode::Right => {
