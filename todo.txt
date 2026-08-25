@@ -1,6 +1,8 @@
 option file:
     - number of subdir loaded
     - ratio of size of dir widget and preview widget
+    - highlight symbol
+    - colors
 
 keybindings:
     - copy, cut, paste, new, rm, open

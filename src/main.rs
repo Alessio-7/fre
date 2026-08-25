@@ -14,12 +14,12 @@ fn valid_path(path: Option<String>) -> String {
         let mut p: String = path.unwrap();
         let re: Regex = Regex::new(r"^~?\/.*$").unwrap();
         if re.is_match(&p) {
-            if p.contains('~'){
-                if p.starts_with("~"){
+            if p.contains('~') {
+                if p.starts_with("~") {
                     let home = std::env::var("HOME").unwrap();
                     p = p.replace("~", &home);
-                }else {
-                    panic!("the path '{}' is not valid", p);        
+                } else {
+                    panic!("the path '{}' is not valid", p);
                 }
             }
             return p;

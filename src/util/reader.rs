@@ -11,6 +11,21 @@ pub enum FileType {
     //Binary,
 }
 
+impl Default for FileType {
+    fn default() -> Self {
+        FileType::Dir
+    }
+}
+
+impl FileType{
+    pub fn icon(&self) -> char {
+        if self == &FileType::Dir {
+            return '';
+        }
+        ' '
+    }
+}
+
 fn convert_file_type(ftype: _FileType, fname: String) -> (FileType, String) {
     if ftype.is_dir() {
         return (FileType::Dir, fname);

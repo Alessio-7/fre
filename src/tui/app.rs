@@ -7,9 +7,7 @@ use ratatui::{DefaultTerminal, Frame, layout::Constraint, layout::Layout};
 #[derive(Debug)]
 pub struct App {
     exit: bool,
-
     path_manager: PathManager,
-
     layout: Layout,
     dir_widget: DirWidget,
     prev_widget: PreviewWidget,
@@ -20,7 +18,7 @@ impl Default for App {
         App {
             exit: false,
             path_manager: PathManager::default(),
-            layout: Layout::horizontal([Constraint::Fill(2), Constraint::Fill(1)]),
+            layout: Layout::horizontal([Constraint::Ratio(3,5), Constraint::Fill(1)]),
             dir_widget: DirWidget::default(),
             prev_widget: PreviewWidget::default(),
         }

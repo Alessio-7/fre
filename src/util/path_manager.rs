@@ -1,6 +1,11 @@
 use super::reader::{FileType, Reader};
 use color_eyre::Result;
 
+fn sort(mut v: Vec<(FileType, String)>) -> Vec<(FileType, String)>{
+   v.sort_by_key(|(file_type, name)| (file_type != &FileType::Dir, name.to_lowercase()));
+   v
+}
+
 #[derive(Debug, Default)]
 pub struct PathManager {
     reader: Reader,
@@ -10,9 +15,10 @@ pub struct PathManager {
 }
 
 impl PathManager {
+
     pub fn load_path(&mut self, path: String) -> Result<()> {
         self.path = path;
-        self.dir_list = self.reader.read_from_path(&self.path)?;
+        self.dir_list = sort(self.reader.read_from_path(&self.path)?);
         Ok(())
         //TODO immagazina tutte le altre informazioni
     }
