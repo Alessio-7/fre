@@ -1,16 +1,15 @@
+use crate::util::fileinfo::FileInfo;
 use crate::util::path_manager::PathManager;
-use crate::util::reader::FileType;
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Style},
-    widgets::{Block, BorderType, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
+    buffer::Buffer, layout::{Constraint, Layout, Rect}, style::{Color, Style}, text::Line, widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
 };
 
 const FOREGROUND: Color = Color::Rgb(226, 228, 220);
 const HIGHLIGHT_FOREGROUND: Color = Color::Rgb(245, 89, 5);
 const DIR_WIDGET_STYLE: Style = Style::new().bold().fg(Color::Rgb(245, 112, 69));
-//const PREVIEW_WIDGET_STYLE : Style = Style::new().bold().fg(Color::Rgb(124, 96, 166));
+const PREVIEW_WIDGET_STYLE: Style = Style::new().bold().fg(Color::Rgb(124, 96, 166));
+
+const SCROLL_FORCE: u16 = 1;
 
 #[derive(Debug, Default)]
 
@@ -28,8 +27,9 @@ impl Widget for &PathWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .border_type(BorderType::Rounded)
-            .style(DIR_WIDGET_STYLE);
-        let p = Paragraph::new(self.path.to_string());
+            .style(DIR_WIDGET_STYLE)
+            .title(Line::from(" Home: H ").right_aligned());
+        let p = Line::from(self.path.to_string());
 
         let _area = block.inner(area);
         block.render(area, buf);
@@ -50,7 +50,7 @@ impl DirWidget {
         self.list_items = pm
             .get_dir_list()
             .iter()
-            .map(|(ftype, fname)| ListItem::new(format!("{}  {}", ftype.icon(), fname)))
+            .map(|info| ListItem::new(format!("{}  {}", info.file_type.icon(), info.name)))
             .collect();
         self.list_state.select(Some(pm.selected_index));
         //TODO levare quel clone
@@ -65,50 +65,67 @@ impl Widget for &DirWidget {
             .highlight_symbol("|>")
             .highlight_style(Style::new().fg(HIGHLIGHT_FOREGROUND));
 
-        let l = Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]).split(area);
-
-        /*
-        let block = Block::bordered()
-            .border_type(BorderType::Rounded)
-            .style(DIR_WIDGET_STYLE);
-
-        let _area = block.inner(area);
-        block.render(area, buf);
-        StatefulWidget::render(list, _area, buf, &mut state);
-        */
-        StatefulWidget::render(list, l[0], buf, &mut state);
-        self.path_widget.render(l[1], buf);
+        let l = Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).split(area);
+        self.path_widget.render(l[0], buf);
+        StatefulWidget::render(list, l[1], buf, &mut state);
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct PreviewWidget {
-    file_preview: (FileType, String),
+    file_info: FileInfo,
+    scroll: u16,
+    layout_file_preview: Layout,
+}
+
+impl Default for PreviewWidget {
+    fn default() -> Self {
+        PreviewWidget {
+            file_info: FileInfo::default(),
+            scroll: 0,
+            layout_file_preview: Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]),
+        }
+    }
 }
 
 impl PreviewWidget {
     pub(super) fn update(&mut self, pm: &PathManager) {
-        self.file_preview = pm.get_file_preview()
-        //self.file_preview = (FileType::Dir, pm.path.clone());
+        self.file_info = pm.get_file_preview();
+    }
+
+    pub(super) fn reset_scroll(&mut self) {
+        self.scroll = 0;
+    }
+
+    pub(super) fn scroll_up(&mut self) {
+        self.scroll = self.scroll.saturating_sub(SCROLL_FORCE);
+    }
+
+    pub(super) fn scroll_down(&mut self) {
+        self.scroll = self.scroll.saturating_add(SCROLL_FORCE);
     }
 }
 
 impl Widget for &PreviewWidget {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        /*
+    fn render(self, area: Rect, buf: &mut Buffer) {        
         let block = Block::bordered()
             .border_type(BorderType::Rounded)
-            .style(PREVIEW_WIDGET_STYLE);
+            .style(PREVIEW_WIDGET_STYLE)
+            .title(Line::from(" Toggle: T ").right_aligned())
+            .title_bottom(Line::from(" Scroll: PagUp, PagDw ").right_aligned());
+
+        let name_line = Line::from(self.file_info.name.clone());
+
+        let content_par = Paragraph::new(self.file_info.content.clone())
+            .block(Block::new().borders(Borders::TOP).style(PREVIEW_WIDGET_STYLE))
+            .style(Style::new().fg(FOREGROUND))
+            .scroll((self.scroll, 0));
 
         let _area = block.inner(area);
-        block.render(area, buf);
+        let l = self.layout_file_preview.split(_area);
 
-        Paragraph::new(self.file_preview.1.to_string())
-        .style(Style::new().fg(FOREGROUND))
-        .render(_area, buf);
-         */
-        Paragraph::new(self.file_preview.1.to_string())
-            .style(Style::new().fg(FOREGROUND))
-            .render(area, buf);
+        block.render(area, buf);
+        name_line.render(l[0], buf);
+        content_par.render(l[1], buf);
     }
 }
