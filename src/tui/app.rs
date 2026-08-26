@@ -2,7 +2,12 @@ use super::widgets::{DirWidget, PreviewWidget};
 use crate::util::path_manager::PathManager;
 use color_eyre::{Result, eyre::Error};
 use crossterm::event::{self, KeyCode};
-use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Layout}, style::Stylize, widgets::{Block, Paragraph, Widget}};
+use ratatui::{
+    DefaultTerminal, Frame,
+    layout::{Constraint, Layout},
+    style::Stylize,
+    widgets::{Block, Paragraph},
+};
 
 #[derive(Debug)]
 pub struct App {
@@ -18,7 +23,7 @@ impl Default for App {
         App {
             exit: false,
             path_manager: PathManager::default(),
-            layout: Layout::horizontal([Constraint::Ratio(3,5), Constraint::Fill(1)]),
+            layout: Layout::horizontal([Constraint::Ratio(3, 5), Constraint::Fill(1)]),
             dir_widget: DirWidget::default(),
             prev_widget: PreviewWidget::default(),
         }
@@ -27,37 +32,29 @@ impl Default for App {
 
 impl App {
     /// runs the application's main loop until the user quits
-    pub fn run(&mut self, terminal: &mut DefaultTerminal, path: String) -> Result<()>{
+    pub fn run(&mut self, terminal: &mut DefaultTerminal, path: String) -> Result<()> {
         self.path_manager.load_path(path)?;
         self.update_widgets();
 
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
             let r = self.handle_events();
-            if r.is_err(){
-                terminal.draw(
-                    |frame|
-                    self.draw_error(frame, r.err().unwrap())
-                )?;
-
+            if r.is_err() {
+                terminal.draw(|frame| self.draw_error(frame, r.err().unwrap()))?;
             }
         }
 
         Ok(())
     }
 
-    fn draw_error(&self, frame: &mut Frame, e: Error){
-        let popup_area = frame.area()
-                               .centered(
-                                Constraint::Ratio(1, 2),
-                                 Constraint::Ratio(1, 2)
-                                );
+    fn draw_error(&self, frame: &mut Frame, e: Error) {
+        let popup_area = frame
+            .area()
+            .centered(Constraint::Ratio(1, 2), Constraint::Ratio(1, 2));
         let block = Block::bordered().on_black().title("Error");
         let par = Paragraph::new(e.to_string());
         frame.render_widget(par, block.inner(popup_area));
         frame.render_widget(block, popup_area);
-
-
     }
 
     fn draw(&self, frame: &mut Frame) {

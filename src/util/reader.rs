@@ -17,7 +17,7 @@ impl Default for FileType {
     }
 }
 
-impl FileType{
+impl FileType {
     pub fn icon(&self) -> char {
         if self == &FileType::Dir {
             return '';

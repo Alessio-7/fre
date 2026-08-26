@@ -1,28 +1,31 @@
 use crate::util::path_manager::PathManager;
 use crate::util::reader::FileType;
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Layout, Rect}, style::{Color, Style}, widgets::{Block, BorderType, List, ListItem, ListState, Paragraph, StatefulWidget, Widget, canvas::Label},
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Style},
+    widgets::{Block, BorderType, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
 };
 
-const FOREGROUND : Color = Color::Rgb(226, 228, 220);
-const HIGHLIGHT_FOREGROUND : Color = Color::Rgb(245, 89, 5);
-const DIR_WIDGET_STYLE : Style = Style::new().bold().fg(Color::Rgb(245, 112, 69));
+const FOREGROUND: Color = Color::Rgb(226, 228, 220);
+const HIGHLIGHT_FOREGROUND: Color = Color::Rgb(245, 89, 5);
+const DIR_WIDGET_STYLE: Style = Style::new().bold().fg(Color::Rgb(245, 112, 69));
 //const PREVIEW_WIDGET_STYLE : Style = Style::new().bold().fg(Color::Rgb(124, 96, 166));
 
 #[derive(Debug, Default)]
 
-pub(super) struct PathWidget{
-    path: String
+pub(super) struct PathWidget {
+    path: String,
 }
 
-impl PathWidget{
-    fn update(&mut self, path: &String){
-        self.path=path.to_string();
+impl PathWidget {
+    fn update(&mut self, path: &String) {
+        self.path = path.to_string();
     }
 }
 
-impl Widget for &PathWidget{
-    fn render(self, area: Rect, buf: &mut Buffer){
+impl Widget for &PathWidget {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .border_type(BorderType::Rounded)
             .style(DIR_WIDGET_STYLE);
@@ -31,7 +34,6 @@ impl Widget for &PathWidget{
         let _area = block.inner(area);
         block.render(area, buf);
         p.render(_area, buf);
-        
     }
 }
 
@@ -48,8 +50,7 @@ impl DirWidget {
         self.list_items = pm
             .get_dir_list()
             .iter()
-            .map(|(ftype, fname)| 
-            ListItem::new(format!("{}  {}", ftype.icon(), fname)))
+            .map(|(ftype, fname)| ListItem::new(format!("{}  {}", ftype.icon(), fname)))
             .collect();
         self.list_state.select(Some(pm.selected_index));
         //TODO levare quel clone
@@ -62,10 +63,9 @@ impl Widget for &DirWidget {
         let list = List::new(self.list_items.iter().cloned())
             .style(Style::new().fg(FOREGROUND))
             .highlight_symbol("|>")
-            .highlight_style(Style::new().fg(   HIGHLIGHT_FOREGROUND));
+            .highlight_style(Style::new().fg(HIGHLIGHT_FOREGROUND));
 
-        let l = Layout::vertical([Constraint::Fill(1), Constraint::Length(3)])
-                            .split(area);
+        let l = Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]).split(area);
 
         /*
         let block = Block::bordered()
@@ -102,13 +102,13 @@ impl Widget for &PreviewWidget {
 
         let _area = block.inner(area);
         block.render(area, buf);
-        
+
         Paragraph::new(self.file_preview.1.to_string())
         .style(Style::new().fg(FOREGROUND))
         .render(_area, buf);
          */
         Paragraph::new(self.file_preview.1.to_string())
-        .style(Style::new().fg(FOREGROUND))
-        .render(area, buf);
+            .style(Style::new().fg(FOREGROUND))
+            .render(area, buf);
     }
 }
