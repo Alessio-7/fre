@@ -6,8 +6,8 @@ use ratatui::{
 
 const FOREGROUND: Color = Color::Rgb(226, 228, 220);
 const HIGHLIGHT_FOREGROUND: Color = Color::Rgb(245, 89, 5);
-const DIR_WIDGET_STYLE: Style = Style::new().bold().fg(Color::Rgb(245, 112, 69));
-const PREVIEW_WIDGET_STYLE: Style = Style::new().bold().fg(Color::Rgb(124, 96, 166));
+const DIR_WIDGET_STYLE: Style = Style::new().fg(Color::Rgb(245, 112, 69));
+const PREVIEW_WIDGET_STYLE: Style = Style::new().fg(Color::Rgb(124, 96, 166));
 
 const SCROLL_FORCE: u16 = 1;
 
@@ -26,9 +26,9 @@ impl PathWidget {
 impl Widget for &PathWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
-            .border_type(BorderType::Rounded)
+            .borders(Borders::BOTTOM)
             .style(DIR_WIDGET_STYLE)
-            .title(Line::from(" Home: H ").right_aligned());
+            .title_bottom(Line::from(" Home: H ").right_aligned());
         let p = Line::from(self.path.to_string());
 
         let _area = block.inner(area);
@@ -65,9 +65,9 @@ impl Widget for &DirWidget {
             .highlight_symbol("|>")
             .highlight_style(Style::new().fg(HIGHLIGHT_FOREGROUND));
 
-        let l = Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).split(area);
-        self.path_widget.render(l[0], buf);
-        StatefulWidget::render(list, l[1], buf, &mut state);
+        let l = Layout::vertical([Constraint::Length(1), Constraint::Length(2), Constraint::Fill(1)]).split(area);
+        self.path_widget.render(l[1], buf);
+        StatefulWidget::render(list, l[2], buf, &mut state);
     }
 }
 

@@ -26,7 +26,7 @@ impl FileInfo {
 impl Default for FileInfo {
     fn default() -> Self {
         FileInfo {
-            file_type: FileType::UknownFile,
+            file_type: FileType::File("".to_string()),
             name: "default file".to_string(),
             content: "Not human readable".to_string(),
         }
@@ -38,7 +38,7 @@ pub enum FileType {
     Dir,
     Symlink,
     File(String),
-    UknownFile
+    Error
 }
 
 impl Default for FileType {
@@ -49,10 +49,49 @@ impl Default for FileType {
 
 impl FileType {
     pub fn icon(&self) -> char {
-        if self == &FileType::Dir {
-            return '';
+        match &self {
+            &FileType::Dir => '',
+            &FileType::Symlink => '',
+            &FileType::Error => '󰡯',
+            &FileType::File(extension) => 
+                match extension.as_str() {
+                    "png" | "jpg" | "webp" | "tif" | "svg" => '󰈟',
+                    "txt" => '',
+                    "zip" | "tar" => '󰛫',
+                    "pdf" => '',
+                    "conf" | "config" | "env" | "rasi" | "toml" | "ini" => '',
+                    "lock" => '',
+                    "old" => '󰩹',
+                    "bin" => '',
+
+                    "git" | "gitignore" => '',
+                    "csv" => '',
+                    "xml" => '󰗀',
+                    "json" | "jsonc" | "yaml" => '',
+                    "html" | "htm" => '',
+                    "css" => '',
+                    "py" => '',
+                    "rs" => '',
+                    "js" => '',
+                    "java" => '',
+                    "rb" => '',
+                    "nb" => '',
+                    "sh" => '',
+                    "lua" => '',
+                    "c" => '',
+                    "cpp" => '',
+                    "cs" => '',
+                    "h" | "hpp" => '󰌷',
+                    "php" => '',
+                    "db" => '',
+                    "glsl" => '',
+                    "tex" => '',
+                    "sql" => '',
+                    "deb" => '',
+                    
+                    _ => ' '
+                }            
         }
-        ' '
     }
 
     pub fn is_dir(&self) -> bool {

@@ -8,11 +8,11 @@ fn convert_file_type(ftype: _FileType, fname: &str) -> FileType {
     } else if ftype.is_symlink() {
         FileType::Symlink
     } else {
-        let i = fname.rfind('.').unwrap_or(fname.len());
-        if i<fname.len()-1{
-            FileType::File(fname.get(i+1..).unwrap().to_string())
+        let i = fname.rfind('.').unwrap_or(fname.len()-1);
+        if i < fname.len()-1{
+            FileType::File(fname[i+1..].to_string())
         }else {
-            FileType::UknownFile
+            FileType::Error
         }
     }
 }
@@ -29,7 +29,7 @@ impl Reader {
         let file_name = path.get(i + 1..).unwrap_or(path);
         let file_type = match fs::metadata(path) {
             Ok(md) => convert_file_type(md.file_type(), file_name),
-            Err(_) => FileType::UknownFile,
+            Err(_) => FileType::Error,
         };
 
         let content;

@@ -20,6 +20,7 @@ pub struct PathManager {
     reader: Reader,
     pub path: String,
     pub selected_index: usize,
+    index_stack: Vec<usize>,
     dir_list: Vec<FileInfo>,
 }
 
