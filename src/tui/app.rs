@@ -2,7 +2,8 @@ use super::widgets::{DirWidget, PreviewWidget};
 use crate::util::path_manager::PathManager;
 use ansi_to_tui::IntoText;
 use color_eyre::{Result, eyre::Error};
-use crossterm::event::{self, KeyCode};
+use crokey::{Combiner, key};
+use crossterm::event::{self, Event, read as read_input};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout},
@@ -12,6 +13,7 @@ use ratatui::{
 
 #[derive(Debug)]
 pub struct App {
+    combiner: Combiner,
     exit: bool,
     path_manager: PathManager,
     layout: Layout,
@@ -23,12 +25,13 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         App {
+            combiner: Combiner::default(),
             exit: false,
             path_manager: PathManager::default(),
-            layout: Layout::horizontal([Constraint::Ratio(3, 5), Constraint::Fill(1)]),
+            layout: Layout::horizontal([Constraint::Ratio(2, 5), Constraint::Fill(1)]),
             dir_widget: DirWidget::default(),
             prev_widget: PreviewWidget::default(),
-            toggle_preview: false
+            toggle_preview: false,
         }
     }
 }
@@ -64,67 +67,84 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        if !self.toggle_preview{
+        if !self.toggle_preview {
             let l = self.layout.split(frame.area());
             frame.render_widget(&self.dir_widget, l[0]);
             frame.render_widget(&self.prev_widget, l[1]);
-        }else {
+        } else {
             frame.render_widget(&self.dir_widget, frame.area());
         }
     }
 
     fn update_widgets(&mut self) {
         self.dir_widget.update(&self.path_manager);
-        if !self.toggle_preview{
+        if !self.toggle_preview {
             self.prev_widget.update(&self.path_manager);
         }
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        if let Some(key) = event::read()?.as_key_press_event() {
-            let mut do_update = true;
-            match key.code {
-                KeyCode::Char('q') | KeyCode::Esc => {
-                    self.exit = true;
-                }
-                KeyCode::Up => {
-                    self.prev_widget.reset_scroll();
-                    self.path_manager.up();
-                }
-                KeyCode::Down => {
-                    self.prev_widget.reset_scroll();
-                    self.path_manager.down();
-                }
-                KeyCode::Left => {
-                    self.path_manager.left()?;
-                }
-                KeyCode::Right => {
-                    self.path_manager.right()?;
-                }
-                
-                KeyCode::Char('h') => {
-                    self.path_manager
-                        .load_path(std::env::var("HOME").unwrap())?;
-                }
-                KeyCode::Enter =>{
-                    self.path_manager.open_selected()?;
-                }
-                KeyCode::Char('t') => {
-                    self.toggle_preview = !self.toggle_preview;
-                }
-                KeyCode::PageDown => {
-                    self.prev_widget.scroll_down();
-                }
-                KeyCode::PageUp => {
-                    self.prev_widget.scroll_up();
-                }
-                _ => {
-                    do_update = false;
+        match read_input() {
+            Ok(Event::Key(key_event)) => {
+                if let Some(key_combination) = self.combiner.transform(key_event) {
+                    let mut do_update = true;
+                    match key_combination {
+                        key!(ctrl - q) => {
+                            self.exit = true;
+                        }
+                        key!(home) => {
+                            self.path_manager.select_first();
+                        }
+                        key!(end) => {
+                            self.path_manager.select_last();
+                        }
+                        key!(up) => {
+                            self.prev_widget.reset_scroll();
+                            self.path_manager.select_previous();
+                        }
+                        key!(down) => {
+                            self.prev_widget.reset_scroll();
+                            self.path_manager.select_next();
+                        }
+                        key!(left) => {
+                            self.path_manager.go_out()?;
+                        }
+                        key!(right) => {
+                            self.path_manager.go_into()?;
+                        }
+                        key!(ctrl - h) => {
+                            self.path_manager
+                                .load_path(std::env::var("HOME").unwrap())?;
+                        }
+                        key!(enter) => {
+                            self.path_manager.open_selected()?;
+                        }
+                        key!(ctrl - t) => {
+                            self.toggle_preview = !self.toggle_preview;
+                        }
+                        key!(pagedown) => {
+                            self.prev_widget.scroll_down();
+                        }
+                        key!(pageup) => {
+                            self.prev_widget.scroll_up();
+                        }
+                        key!(esc) | key!(backspace) => {
+                            self.path_manager.clear_filter();
+                        }
+                        _ => {
+                            if let Some(letter) = key_combination.as_letter() {
+                                self.path_manager.filter_dir_list(letter);
+                            } else {
+                                do_update = false;
+                            }
+                        }
+                    }
+                    if do_update {
+                        self.update_widgets();
+                    }
                 }
             }
-            if do_update {
-                self.update_widgets();
-            }
+            _ => {}
         }
         Ok(())
     }

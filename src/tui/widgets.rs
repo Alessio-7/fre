@@ -1,7 +1,13 @@
 use crate::util::fileinfo::FileInfo;
 use crate::util::path_manager::PathManager;
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Layout, Rect}, style::{Color, Style}, text::Line, widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Style},
+    text::Line,
+    widgets::{
+        Block, BorderType, Borders, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
+    },
 };
 
 const FOREGROUND: Color = Color::Rgb(226, 228, 220);
@@ -15,20 +21,20 @@ const SCROLL_FORCE: u16 = 1;
 
 pub(super) struct PathWidget {
     path: String,
-}
-
-impl PathWidget {
-    fn update(&mut self, path: &String) {
-        self.path = path.to_string();
-    }
+    filter_letter: Option<char>,
 }
 
 impl Widget for &PathWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let block = Block::bordered()
+        let mut block = Block::bordered()
             .borders(Borders::BOTTOM)
             .style(DIR_WIDGET_STYLE)
-            .title_bottom(Line::from(" Home: H ").right_aligned());
+            .title_bottom(Line::from(" Home: Ctrl - H ").right_aligned());
+
+        if let Some(l) = self.filter_letter {
+            block = block.title_bottom(Line::from(format!(" Filter: '{l}' ")).centered());
+        }
+
         let p = Line::from(self.path.to_string());
 
         let _area = block.inner(area);
@@ -46,7 +52,8 @@ pub(super) struct DirWidget {
 
 impl DirWidget {
     pub(super) fn update(&mut self, pm: &PathManager) {
-        self.path_widget.update(&pm.path);
+        self.path_widget.path = pm.path.clone();
+        self.path_widget.filter_letter = pm.get_filter_letter();
         self.list_items = pm
             .get_dir_list()
             .iter()
@@ -65,7 +72,12 @@ impl Widget for &DirWidget {
             .highlight_symbol("|>")
             .highlight_style(Style::new().fg(HIGHLIGHT_FOREGROUND));
 
-        let l = Layout::vertical([Constraint::Length(1), Constraint::Length(2), Constraint::Fill(1)]).split(area);
+        let l = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(2),
+            Constraint::Fill(1),
+        ])
+        .split(area);
         self.path_widget.render(l[1], buf);
         StatefulWidget::render(list, l[2], buf, &mut state);
     }
@@ -107,17 +119,21 @@ impl PreviewWidget {
 }
 
 impl Widget for &PreviewWidget {
-    fn render(self, area: Rect, buf: &mut Buffer) {        
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
             .border_type(BorderType::Rounded)
             .style(PREVIEW_WIDGET_STYLE)
-            .title(Line::from(" Toggle: T ").right_aligned())
+            .title(Line::from(" Toggle: Ctrl - T ").right_aligned())
             .title_bottom(Line::from(" Scroll: PagUp, PagDw ").right_aligned());
 
         let name_line = Line::from(self.file_info.name.clone());
 
         let content_par = Paragraph::new(self.file_info.content.clone())
-            .block(Block::new().borders(Borders::TOP).style(PREVIEW_WIDGET_STYLE))
+            .block(
+                Block::new()
+                    .borders(Borders::TOP)
+                    .style(PREVIEW_WIDGET_STYLE),
+            )
             .style(Style::new().fg(FOREGROUND))
             .scroll((self.scroll, 0));
 

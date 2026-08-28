@@ -14,10 +14,10 @@ impl FileInfo {
         }
     }
 
-    pub fn empty_dir() -> Self {
+    pub fn empty() -> Self {
         FileInfo {
-            file_type: FileType::Dir,
-            name: "Empty dir".to_string(),
+            file_type: FileType::Empty,
+            name: "Empty".to_string(),
             content: "The void looks at you...".to_string(),
         }
     }
@@ -38,7 +38,8 @@ pub enum FileType {
     Dir,
     Symlink,
     File(String),
-    Error
+    Error,
+    Empty
 }
 
 impl Default for FileType {
@@ -53,44 +54,44 @@ impl FileType {
             &FileType::Dir => '',
             &FileType::Symlink => '',
             &FileType::Error => '󰡯',
-            &FileType::File(extension) => 
-                match extension.as_str() {
-                    "png" | "jpg" | "webp" | "tif" | "svg" => '󰈟',
-                    "txt" => '',
-                    "zip" | "tar" => '󰛫',
-                    "pdf" => '',
-                    "conf" | "config" | "env" | "rasi" | "toml" | "ini" => '',
-                    "lock" => '',
-                    "old" => '󰩹',
-                    "bin" => '',
+            &FileType::File(extension) => match extension.as_str() {
+                "png" | "jpg" | "webp" | "tif" | "svg" => '󰈟',
+                "txt" => '',
+                "zip" | "tar" => '󰛫',
+                "pdf" => '',
+                "conf" | "config" | "env" | "rasi" | "toml" | "ini" => '',
+                "lock" => '',
+                "old" => '󰩹',
+                "bin" => '',
 
-                    "git" | "gitignore" => '',
-                    "csv" => '',
-                    "xml" => '󰗀',
-                    "json" | "jsonc" | "yaml" => '',
-                    "html" | "htm" => '',
-                    "css" => '',
-                    "py" => '',
-                    "rs" => '',
-                    "js" => '',
-                    "java" => '',
-                    "rb" => '',
-                    "nb" => '',
-                    "sh" => '',
-                    "lua" => '',
-                    "c" => '',
-                    "cpp" => '',
-                    "cs" => '',
-                    "h" | "hpp" => '󰌷',
-                    "php" => '',
-                    "db" => '',
-                    "glsl" => '',
-                    "tex" => '',
-                    "sql" => '',
-                    "deb" => '',
-                    
-                    _ => ' '
-                }            
+                "git" | "gitignore" => '',
+                "csv" => '',
+                "xml" => '󰗀',
+                "json" | "jsonc" | "yaml" => '',
+                "html" | "htm" => '',
+                "css" => '',
+                "py" => '',
+                "rs" => '',
+                "js" => '',
+                "java" => '',
+                "rb" => '',
+                "nb" => '',
+                "sh" => '',
+                "lua" => '',
+                "c" => '',
+                "cpp" => '',
+                "cs" => '',
+                "h" | "hpp" => '󰌷',
+                "php" => '',
+                "db" => '',
+                "glsl" => '',
+                "tex" => '',
+                "sql" => '',
+                "deb" => '',
+
+                _ => ' ',
+            },
+            _ => ' '
         }
     }
 

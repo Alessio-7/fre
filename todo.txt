@@ -6,5 +6,4 @@ option file:
 
 keybindings:
     - copy, cut, paste, new, rm
-    - toggle preview
     - complete mouse compability

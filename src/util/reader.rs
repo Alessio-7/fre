@@ -8,10 +8,10 @@ fn convert_file_type(ftype: _FileType, fname: &str) -> FileType {
     } else if ftype.is_symlink() {
         FileType::Symlink
     } else {
-        let i = fname.rfind('.').unwrap_or(fname.len()-1);
-        if i < fname.len()-1{
-            FileType::File(fname[i+1..].to_string())
-        }else {
+        let i = fname.rfind('.').unwrap_or(fname.len() - 1);
+        if i < fname.len() - 1 {
+            FileType::File(fname[i + 1..].to_string())
+        } else {
             FileType::Error
         }
     }
