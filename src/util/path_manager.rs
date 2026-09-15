@@ -164,4 +164,17 @@ impl PathManager {
         };
         Ok(())
     }
+
+    pub fn open_selected_on_explorer(&self) -> Result<()> {
+        match self.get_selected() {
+            None => {}
+            Some(info) => {
+                let p = if info.file_type.is_dir() { concat_path(&self.path, &info.name) } 
+                                else { self.path.to_string() };
+                open::with_detached(p, "nemo")?;
+            }
+        };
+        Ok(())
+    }
+
 }

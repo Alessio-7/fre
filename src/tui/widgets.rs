@@ -32,7 +32,7 @@ impl Widget for &PathWidget {
             .title_bottom(Line::from(" Home: Ctrl - H ").right_aligned());
 
         if let Some(l) = self.filter_letter {
-            block = block.title_bottom(Line::from(format!(" Filter: '{l}' ")).centered());
+            block = block.title_bottom(Line::from(format!(" Filter: '{l}' ")).left_aligned());
         }
 
         let p = Line::from(self.path.to_string());

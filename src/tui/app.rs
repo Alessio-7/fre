@@ -119,6 +119,9 @@ impl App {
                         key!(enter) => {
                             self.path_manager.open_selected()?;
                         }
+                        key!(ctrl - e) => {
+                            self.path_manager.open_selected_on_explorer()?;
+                        }
                         key!(ctrl - t) => {
                             self.toggle_preview = !self.toggle_preview;
                         }

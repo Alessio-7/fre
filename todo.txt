@@ -1,4 +1,7 @@
+- previous selected index when going back
+
 option file:
+    - preload dirs
     - number of subdir loaded
     - ratio of size of dir widget and preview widget
     - highlight symbol
