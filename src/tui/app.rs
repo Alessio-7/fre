@@ -112,7 +112,7 @@ impl App {
                         key!(right) | key!(ctrl - l) => {
                             self.path_manager.go_into()?;
                         }
-                        key!(ctrl - h) => {
+                        key!(ctrl - shift - h) => {
                             self.path_manager
                                 .load_path(std::env::var("HOME").unwrap())?;
                         }
