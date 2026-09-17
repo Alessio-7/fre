@@ -98,18 +98,18 @@ impl App {
                         key!(end) => {
                             self.path_manager.select_last();
                         }
-                        key!(up) => {
+                        key!(up) | key!(ctrl - k) => {
                             self.prev_widget.reset_scroll();
                             self.path_manager.select_previous();
                         }
-                        key!(down) => {
+                        key!(down) | key!(ctrl - j) => {
                             self.prev_widget.reset_scroll();
                             self.path_manager.select_next();
                         }
-                        key!(left) => {
+                        key!(left) | key!(ctrl - h) => {
                             self.path_manager.go_out()?;
                         }
-                        key!(right) => {
+                        key!(right) | key!(ctrl - l) => {
                             self.path_manager.go_into()?;
                         }
                         key!(ctrl - h) => {
@@ -118,6 +118,9 @@ impl App {
                         }
                         key!(enter) => {
                             self.path_manager.open_selected()?;
+                        }
+                        key!(space) => {
+                            self.path_manager.go_into_or_open_selected()?;
                         }
                         key!(ctrl - e) => {
                             self.path_manager.open_selected_on_explorer()?;
@@ -136,7 +139,7 @@ impl App {
                         }
                         _ => {
                             if let Some(letter) = key_combination.as_letter() {
-                                self.path_manager.filter_dir_list(letter);
+                                self.path_manager.filter_dir_list_word(letter);
                             } else {
                                 do_update = false;
                             }

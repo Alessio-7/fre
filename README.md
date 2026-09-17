@@ -1,7 +1,8 @@
 # Fast Rust file Explorer - fre
 
 Keybindings:
- - Arrows: navigate
+ - Arrows or Ctrl + H,J,K,L : navigate
+ - Space bar : go into directory or open file
  - Ctrl + Q: quit
  - Ctrl + H: return to home
  - Enter: open directory with kitty or file with system default app

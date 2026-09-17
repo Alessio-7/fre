@@ -22,12 +22,12 @@ pub struct PathManager {
     pub selected_index: usize,
     dir_list: Vec<FileInfo>,
     filtered_dir_list: Vec<usize>,
-    filter_letter: char,
+    filter: String,
 }
 
 impl PathManager {
     pub fn clear_filter(&mut self) {
-        self.filter_letter = ' ';
+        self.filter = "".to_string();
         self.filtered_dir_list = (0..self.dir_list.len()).collect();
         self.selected_index = 0;
     }
@@ -40,11 +40,12 @@ impl PathManager {
         //TODO immagazina tutte le altre informazioni
     }
 
-    pub fn filter_dir_list(&mut self, letter: char) {
-        if self.filter_letter == letter {
+    /* 
+    pub fn filter_dir_list_single_char(&mut self, letter: char) {
+        if self.filter.starts_with(letter) {
             self.select_next();
         } else {
-            self.filter_letter = letter;
+            self.filter = letter.to_string();
             let re = regex::Regex::new(&format!(r"(?i)^[^a-z]*{}", &letter)).unwrap();
             self.filtered_dir_list.clear();
             for i in 0..self.dir_list.len() {
@@ -56,12 +57,26 @@ impl PathManager {
             self.selected_index = 0;
         }
     }
+    */
 
-    pub fn get_filter_letter(&self) -> Option<char> {
-        if self.filter_letter == ' ' {
+    pub fn filter_dir_list_word(&mut self, letter: char) {
+        self.filter.push(letter);
+        let re = regex::Regex::new(&format!(r"(?i)^[^a-z]*{}", &self.filter)).unwrap();
+        self.filtered_dir_list.clear();
+        for i in 0..self.dir_list.len() {
+            let name = &self.dir_list[i].name;
+            if re.find(name).is_some() {
+                self.filtered_dir_list.push(i);
+            }
+        }
+        self.selected_index = 0;
+    }
+
+    pub fn get_filter(&self) -> Option<String> {
+        if self.filter == "" {
             None
         } else {
-            Some(self.filter_letter)
+            Some(self.filter.clone())
         }
     }
 
@@ -138,42 +153,45 @@ impl PathManager {
     }
 
     pub fn go_into(&mut self) -> Result<()> {
-        match self.get_selected() {
-            None => {}
-            Some(info) => {
-                let p = concat_path(&self.path, &info.name);
-                if info.file_type.is_dir() {
-                    self.load_path(p)?;
-                }
+        if let Some(info) = self.get_selected() {
+            let p = concat_path(&self.path, &info.name);
+            if info.file_type.is_dir() {
+                self.load_path(p)?;
             }
-        };
+        }
         Ok(())
     }
 
+    
     pub fn open_selected(&self) -> Result<()> {
-        match self.get_selected() {
-            None => {}
-            Some(info) => {
-                let p = concat_path(&self.path, &info.name);
-                if info.file_type.is_dir() {
-                    open::with_detached(p, "kitty")?;
-                } else {
-                    open::that_detached(p)?;
-                }
+        if let Some(info) = self.get_selected() {
+            let p = concat_path(&self.path, &info.name);
+            if info.file_type.is_dir() {
+                open::with_detached(p, "kitty")?;
+            } else {
+                open::that_detached(p)?;
             }
-        };
+        }
+        Ok(())
+    }
+
+    pub fn go_into_or_open_selected(&mut self) -> Result<()> {
+        if let Some(info) = self.get_selected() {
+            if info.file_type.is_dir() {
+                self.go_into()?;
+            } else {
+                self.open_selected()?;
+            }
+        }
         Ok(())
     }
 
     pub fn open_selected_on_explorer(&self) -> Result<()> {
-        match self.get_selected() {
-            None => {}
-            Some(info) => {
-                let p = if info.file_type.is_dir() { concat_path(&self.path, &info.name) } 
-                                else { self.path.to_string() };
-                open::with_detached(p, "nemo")?;
-            }
-        };
+        if let Some(info) = self.get_selected() {
+            let p = if info.file_type.is_dir() { concat_path(&self.path, &info.name) } 
+                            else { self.path.to_string() };
+            open::with_detached(p, "nemo")?;
+        }
         Ok(())
     }
 

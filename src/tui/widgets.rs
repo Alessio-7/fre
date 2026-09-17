@@ -21,18 +21,19 @@ const SCROLL_FORCE: u16 = 1;
 
 pub(super) struct PathWidget {
     path: String,
-    filter_letter: Option<char>,
+    filter: Option<String>,
 }
 
 impl Widget for &PathWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut block = Block::bordered()
             .borders(Borders::BOTTOM)
-            .style(DIR_WIDGET_STYLE)
-            .title_bottom(Line::from(" Home: Ctrl - H ").right_aligned());
+            .style(DIR_WIDGET_STYLE);
+            //.title_bottom(Line::from(" Home: Ctrl - H ").right_aligned());
 
-        if let Some(l) = self.filter_letter {
-            block = block.title_bottom(Line::from(format!(" Filter: '{l}' ")).left_aligned());
+        if let Some(f) = self.filter.as_ref() {
+            //block = block.title_bottom(Line::from(format!(" Filter: '{f}' ")).left_aligned());
+            block = block.title_bottom(Line::from(format!(" '{f}' ")).centered());
         }
 
         let p = Line::from(self.path.to_string());
@@ -53,7 +54,7 @@ pub(super) struct DirWidget {
 impl DirWidget {
     pub(super) fn update(&mut self, pm: &PathManager) {
         self.path_widget.path = pm.path.clone();
-        self.path_widget.filter_letter = pm.get_filter_letter();
+        self.path_widget.filter = pm.get_filter();
         self.list_items = pm
             .get_dir_list()
             .iter()
