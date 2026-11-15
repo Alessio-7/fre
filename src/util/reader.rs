@@ -1,7 +1,7 @@
 use super::fileinfo::{FileInfo, FileType};
-use color_eyre::Result;
-use std::{fs::{self, File, FileType as _FileType}, io::BufReader, path::PathBuf};
-use serde_json::{from_reader as read_json, Value};
+use color_eyre::{Result, eyre::eyre};
+use std::{error::Error, fs::{self, File, FileType as _FileType}, io::BufReader, path::PathBuf};
+use serde_json::{Value, from_reader as read_json};
 
 fn convert_file_type(ftype: _FileType, fname: &str) -> FileType {
     if ftype.is_dir() {
@@ -87,18 +87,25 @@ fn single_read_from_path(&self, path: &String) -> Vec<FileInfo> {
 }
     */
 
-pub fn read_config() -> Value {
+pub fn default_config() -> Value {
     let default = include_str!("sample_conf.json");
-    let default_json = serde_json::from_str(default).unwrap();
-    panic!("FINIRE");
-    Ok(conf) = (|| {
-        let mut p = PathBuf::from(std::env::var("HOME").unwrap());
-        p.push(".config/fre");
-        fs::create_dir_all(&p)?;
-        p.push("conf.json");
-        read_json(BufReader::new(File::open(&p)?))?
-    })() else {
-        default_json;
-    };
+    serde_json::from_str(default).unwrap()
+}
 
+pub fn read_config() -> Result<Value> {
+    let default = include_str!("sample_conf.json");
+
+    let mut p = PathBuf::from(std::env::var("HOME").unwrap());
+    p.push(".config/fre");
+    fs::create_dir_all(&p)?;
+    p.push("conf.json");
+    let Ok(f) = File::open(&p) else {
+        let _ = fs::write(p, default);
+        return Ok(default_config());
+    };
+    
+    Ok(
+        read_json(BufReader::new(f))
+        .map_err(|e| eyre!(e.to_string()))?
+    )
 }

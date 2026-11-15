@@ -1,3 +1,5 @@
+use std::{collections::HashMap, hash::Hash};
+
 use super::widgets::{DirWidget, PreviewWidget};
 use crate::util::{path_manager::PathManager, reader};
 use ansi_to_tui::IntoText;
@@ -20,6 +22,7 @@ pub struct App {
     dir_widget: DirWidget,
     prev_widget: PreviewWidget,
     toggle_preview: bool,
+    keybindings: HashMap<String, String>
 }
 
 impl Default for App {
@@ -32,13 +35,14 @@ impl Default for App {
             dir_widget: DirWidget::default(),
             prev_widget: PreviewWidget::default(),
             toggle_preview: false,
+            keybindings: HashMap::new()
         }
     }
 }
 
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal, path: String) -> Result<()> {
-        self.load_keybindings()?;
+        self.load_configs();
         self.path_manager.load_path(path)?;
         self.update_widgets();
         while !self.exit {
@@ -84,9 +88,24 @@ impl App {
         }
     }
 
-    fn load_keybindings(&mut self) -> Result<()> {
-        reader::read_config();
-        Ok(())
+    fn load_configs(&mut self) {
+
+        fn load(conf: serde_json::Value) -> Result<()> {
+            let a = &conf["appearence"].as_object();
+            let k = &conf["keybindings"].as_object();
+            drop(conf);
+
+            for (key, command) in k.as_object(). {
+
+            }
+
+            Ok(())
+        }
+
+        reader::read_config().and_then(|conf| load(conf))
+        .unwrap_or_else( |_|
+            load(reader::default_config()).expect("Failed to load default config")
+        );
     }
 
     fn handle_events(&mut self) -> Result<()> {
@@ -94,6 +113,7 @@ impl App {
             Ok(Event::Key(key_event)) => {
                 if let Some(key_combination) = self.combiner.transform(key_event) {
                     let mut do_update = true;
+
                     match key_combination {
                         key!(ctrl - q) => {
                             self.exit = true;
