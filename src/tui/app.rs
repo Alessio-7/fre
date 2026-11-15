@@ -3,7 +3,7 @@ use std::{collections::HashMap, hash::Hash};
 use super::widgets::{DirWidget, PreviewWidget};
 use crate::util::{path_manager::PathManager, reader};
 use ansi_to_tui::IntoText;
-use color_eyre::{Result, eyre::Error};
+use color_eyre::{Result, eyre::{Error, eyre}};
 use crokey::{Combiner, key};
 use crossterm::event::{self, Event, read as read_input};
 use ratatui::{
@@ -91,12 +91,17 @@ impl App {
     fn load_configs(&mut self) {
 
         fn load(conf: serde_json::Value) -> Result<()> {
-            let a = &conf["appearence"].as_object();
-            let k = &conf["keybindings"].as_object();
-            drop(conf);
+            let Some(a) = conf["appearence"].as_object() else {
+                return Err(eyre!("Failed to load appearence config"));
+            };
+            let Some(k) = conf["keybindings"].as_object() else {
+                return Err(eyre!("Failed to load keybindings config"));
+            };
 
-            for (key, command) in k.as_object(). {
-
+            for (key, command) in k {
+                if let Some(command) = command.as_str() {
+                    self.keybindings.insert(key.clone(), command.to_string());
+                }
             }
 
             Ok(())
