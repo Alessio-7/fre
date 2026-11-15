@@ -1,5 +1,5 @@
 use super::widgets::{DirWidget, PreviewWidget};
-use crate::util::path_manager::PathManager;
+use crate::util::{path_manager::PathManager, reader};
 use ansi_to_tui::IntoText;
 use color_eyre::{Result, eyre::Error};
 use crokey::{Combiner, key};
@@ -38,6 +38,7 @@ impl Default for App {
 
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal, path: String) -> Result<()> {
+        self.load_keybindings()?;
         self.path_manager.load_path(path)?;
         self.update_widgets();
         while !self.exit {
@@ -83,6 +84,11 @@ impl App {
         }
     }
 
+    fn load_keybindings(&mut self) -> Result<()> {
+        reader::read_config();
+        Ok(())
+    }
+
     fn handle_events(&mut self) -> Result<()> {
         match read_input() {
             Ok(Event::Key(key_event)) => {
@@ -112,9 +118,8 @@ impl App {
                         key!(right) | key!(ctrl - l) => {
                             self.path_manager.go_into()?;
                         }
-                        key!(ctrl - shift - h) => {
-                            self.path_manager
-                                .load_path(std::env::var("HOME").unwrap())?;
+                        key!(alt - h) => {
+                            self.path_manager.load_path(std::env::var("HOME").unwrap())?;
                         }
                         key!(enter) => {
                             self.path_manager.open_selected()?;

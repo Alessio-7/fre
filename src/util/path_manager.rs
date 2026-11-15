@@ -1,5 +1,5 @@
 use super::fileinfo::FileInfo;
-use super::reader::Reader;
+use super::reader;
 use color_eyre::Result;
 
 fn sort(mut v: Vec<FileInfo>) -> Vec<FileInfo> {
@@ -17,7 +17,6 @@ fn concat_path(path1: &String, path2: &String) -> String {
 
 #[derive(Debug, Default)]
 pub struct PathManager {
-    reader: Reader,
     pub path: String,
     pub selected_index: usize,
     dir_list: Vec<FileInfo>,
@@ -33,7 +32,7 @@ impl PathManager {
     }
 
     pub fn load_path(&mut self, path: String) -> Result<()> {
-        self.dir_list = sort(self.reader.read_from_path(&path)?);
+        self.dir_list = sort(reader::read_from_path(&path)?);
         self.clear_filter();
         self.path = path;
         Ok(())
@@ -95,7 +94,7 @@ impl PathManager {
     pub fn get_file_preview(&self) -> FileInfo {
         //TODO loader and see if already loaded
         if let Some(r) = self.get_selected(){
-            self.reader.read_file(&concat_path(&self.path, &r.name), sort)
+            reader::read_file(&concat_path(&self.path, &r.name), sort)
         } else {
             FileInfo::empty()
         }

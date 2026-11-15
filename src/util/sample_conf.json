@@ -1,0 +1,47 @@
+{
+    "keybindings" : {
+        "ctrl-q"    : "exit",
+        "ctrl-r"    : "reload",
+        "home"      : "select_first",
+        "end"       : "select_last",
+        
+        "up"        : "select_previous",
+        "ctrl-k"    : "select_previous",
+        "down"      : "selet_next",
+        "ctrl-j"    : "selet_next",
+        "left"      : "go_out",
+        "ctrl-h"    : "go_out",
+        "right"     : "go_into",
+        "ctrl-l"    : "go_into",
+
+        "shift"     : "select_multiple",
+        "ctrl-a"    : "select_all",
+
+        "ctrl-x"    : "cut",
+        "ctrl-c"    : "copy",
+        "ctrl-v"    : "paste",
+        "ctrl-n"    : "new",
+        "del"       : "delete",      
+
+        "alt-h"     : "home",
+        "enter"     : "open",
+        "space"     : "go_into_or_open",
+        "ctrl-e"    : "open_on_explorer",
+        
+        "ctrl-t"    : "toggle_preview",
+        "pagedown"  : "scroll_down_preview",
+        "pageup"    : "scroll_up_preview",
+        
+        "esc"       : "clear_search",
+        "backspace" : "clear_search"
+    },
+
+    "appearence" : {
+        "ratio"                 : 0.4,
+        "selection_symbol"      : "|>",
+        "foreground"            : "rgb(226, 228, 220)",
+        "highlight_foreground"  : "rgb(245, 89, 5)",
+        "dir_color"             : "rgb(245, 112, 69)",
+        "preview_color"         : "rgb(124, 96, 166)"
+    }
+}
