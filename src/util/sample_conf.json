@@ -32,8 +32,8 @@
         "pagedown"  : "scroll_down_preview",
         "pageup"    : "scroll_up_preview",
         
-        "esc"       : "clear_search",
-        "backspace" : "clear_search"
+        "esc"       : "clear_filter",
+        "backspace" : "clear_filter"
     },
 
     "appearence" : {

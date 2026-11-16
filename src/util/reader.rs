@@ -1,6 +1,6 @@
 use super::fileinfo::{FileInfo, FileType};
 use color_eyre::{Result, eyre::eyre};
-use std::{error::Error, fs::{self, File, FileType as _FileType}, io::BufReader, path::PathBuf};
+use std::{fs::{self, File, FileType as _FileType}, io::BufReader, path::PathBuf};
 use serde_json::{Value, from_reader as read_json};
 
 fn convert_file_type(ftype: _FileType, fname: &str) -> FileType {
@@ -28,10 +28,10 @@ pub(super) fn read_file(
         Err(_) => FileType::Error,
     };
 
-    let content;
+    
 
-    if file_type.is_dir() {
-        content = match fs::read_dir(path) {
+    let content = if file_type.is_dir() {
+        match fs::read_dir(path) {
             Ok(rd) => sort_fun(
                 rd.filter_map(|entry| {
                     let entry = entry.ok()?;
@@ -51,16 +51,16 @@ pub(super) fn read_file(
             Err(_) => "Could not read dir contents".to_string(),
         }
     } else {
-        content = match fs::read_to_string(path) {
+        match fs::read_to_string(path) {
             Ok(c) => c,
             Err(e) => format!("Could not read \n{}", e),
-        };
-    }
+        }
+    };
 
     FileInfo {
-        file_type: file_type,
+        file_type,
         name: file_name.to_string(),
-        content: content,
+        content,
     }
 }
 
@@ -104,8 +104,6 @@ pub fn read_config() -> Result<Value> {
         return Ok(default_config());
     };
     
-    Ok(
-        read_json(BufReader::new(f))
-        .map_err(|e| eyre!(e.to_string()))?
-    )
+    read_json(BufReader::new(f))
+        .map_err(|e| eyre!(e.to_string()))
 }

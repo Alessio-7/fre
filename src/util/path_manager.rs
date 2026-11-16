@@ -9,9 +9,9 @@ fn sort(mut v: Vec<FileInfo>) -> Vec<FileInfo> {
 
 fn concat_path(path1: &String, path2: &String) -> String {
     if path1.ends_with('/') {
-        return format!("{}{}", path1, path2);
+        format!("{}{}", path1, path2)
     } else {
-        return format!("{}/{}", path1, path2);
+        format!("{}/{}", path1, path2)
     }
 }
 
@@ -60,7 +60,7 @@ impl PathManager {
 
     pub fn filter_dir_list_word(&mut self, letter: char) {
         self.filter.push(letter);
-        let re = regex::Regex::new(&format!(r"(?i)^[^a-z]*{}", &self.filter)).unwrap();
+        let re = regex::Regex::new(&format!(r"(?i)^[^a-z]*{}", self.filter)).unwrap();
         self.filtered_dir_list.clear();
         for i in 0..self.dir_list.len() {
             let name = &self.dir_list[i].name;
@@ -72,7 +72,7 @@ impl PathManager {
     }
 
     pub fn get_filter(&self) -> Option<String> {
-        if self.filter == "" {
+        if self.filter.is_empty() {
             None
         } else {
             Some(self.filter.clone())
@@ -135,12 +135,12 @@ impl PathManager {
             return Ok(());
         }
 
-        let p: &str;
-        if self.path.ends_with('/') {
-            p = self.path.get(..self.path.len() - 1).unwrap();
+        
+        let p: &str = if self.path.ends_with('/') {
+            self.path.get(..self.path.len() - 1).unwrap()
         } else {
-            p = &self.path;
-        }
+            &self.path
+        };
         let i = p.rfind('/').unwrap();
         let pnew = self.path.get(..i).unwrap().to_string();
         if pnew.is_empty() {

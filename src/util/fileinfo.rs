@@ -8,8 +8,8 @@ pub struct FileInfo {
 impl FileInfo {
     pub fn new(file_type: FileType, name: String) -> Self {
         FileInfo {
-            file_type: file_type,
-            name: name,
+            file_type,
+            name,
             content: "".to_string(),
         }
     }
@@ -33,8 +33,9 @@ impl Default for FileInfo {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub enum FileType {
+    #[default]
     Dir,
     Symlink,
     File(String),
@@ -42,19 +43,13 @@ pub enum FileType {
     Empty
 }
 
-impl Default for FileType {
-    fn default() -> Self {
-        FileType::Dir
-    }
-}
-
 impl FileType {
     pub fn icon(&self) -> char {
         match &self {
-            &FileType::Dir => '',
-            &FileType::Symlink => '',
-            &FileType::Error => '󰡯',
-            &FileType::File(extension) => match extension.as_str() {
+            FileType::Dir => '',
+            FileType::Symlink => '',
+            FileType::Error => '󰡯',
+            FileType::File(extension) => match extension.as_str() {
                 "png" | "jpg" | "webp" | "tif" | "svg" => '󰈟',
                 "txt" => '',
                 "zip" | "tar" => '󰛫',

@@ -1,5 +1,8 @@
 - previous selected index when going back
 
+logic:
+    - ctrl + z, storing commands in a stack and launching the defined "inverse command"
+
 option file:
     - preload dirs
     - number of subdir loaded

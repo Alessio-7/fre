@@ -67,7 +67,7 @@ impl DirWidget {
 
 impl Widget for &DirWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut state = self.list_state.clone();
+        let mut state = self.list_state;
         let list = List::new(self.list_items.iter().cloned())
             .style(Style::new().fg(FOREGROUND))
             .highlight_symbol("|>")

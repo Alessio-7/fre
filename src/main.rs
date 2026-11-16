@@ -10,8 +10,7 @@ fn main() -> color_eyre::Result<()> {
 }
 
 fn valid_path(path: Option<String>) -> String {
-    if path.is_some() {
-        let mut p: String = path.unwrap();
+    if let Some(mut p) = path {
         let re: Regex = Regex::new(r"^~?\/.*$").unwrap();
         if re.is_match(&p) {
             if p.contains('~') {

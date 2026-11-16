@@ -1,10 +1,11 @@
-use std::{collections::HashMap, hash::Hash};
+use core::panic;
+use std::{collections::HashMap, str::FromStr};
 
 use super::widgets::{DirWidget, PreviewWidget};
 use crate::util::{path_manager::PathManager, reader};
 use ansi_to_tui::IntoText;
 use color_eyre::{Result, eyre::{Error, eyre}};
-use crokey::{Combiner, key};
+use crokey::{Combiner, KeyCombination};
 use crossterm::event::{self, Event, read as read_input};
 use ratatui::{
     DefaultTerminal, Frame,
@@ -22,7 +23,7 @@ pub struct App {
     dir_widget: DirWidget,
     prev_widget: PreviewWidget,
     toggle_preview: bool,
-    keybindings: HashMap<String, String>
+    keybindings: HashMap<KeyCombination, String>
 }
 
 impl Default for App {
@@ -47,12 +48,9 @@ impl App {
         self.update_widgets();
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            match self.handle_events() {
-                Err(error) => {
-                    terminal.draw(|frame| self.draw_error(frame, error))?;
-                    while !event::read()?.as_key_press_event().is_some() {}
-                }
-                _ => {}
+            if let Err(error) = self.handle_events() {
+                terminal.draw(|frame| self.draw_error(frame, error))?;
+                while !event::read()?.as_key_press_event().is_some() {}
             }
         }
         Ok(())
@@ -90,98 +88,128 @@ impl App {
 
     fn load_configs(&mut self) {
 
-        fn load(conf: serde_json::Value) -> Result<()> {
-            let Some(a) = conf["appearence"].as_object() else {
+        let mut load = |conf: serde_json::Value| -> Result<()> {
+            //TODO appeareance settings
+            let Some(_a) = conf["appearence"].as_object() else {
                 return Err(eyre!("Failed to load appearence config"));
             };
             let Some(k) = conf["keybindings"].as_object() else {
                 return Err(eyre!("Failed to load keybindings config"));
             };
 
-            for (key, command) in k {
-                if let Some(command) = command.as_str() {
-                    self.keybindings.insert(key.clone(), command.to_string());
+            for (keyc, command) in k {
+                if let Some(command) = command.as_str() 
+                && let Ok(k) = KeyCombination::from_str(keyc){
+                    self.keybindings.insert(k, command.to_string());
                 }
             }
 
             Ok(())
-        }
+        };
 
-        reader::read_config().and_then(|conf| load(conf))
+        reader::read_config().and_then(&mut load)
         .unwrap_or_else( |_|
             load(reader::default_config()).expect("Failed to load default config")
         );
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        match read_input() {
-            Ok(Event::Key(key_event)) => {
-                if let Some(key_combination) = self.combiner.transform(key_event) {
-                    let mut do_update = true;
+        if let Ok(Event::Key(key_event)) = read_input()
+            && let Some(key_combination) = self.combiner.transform(key_event) {
+                let mut do_update = true;
 
-                    match key_combination {
-                        key!(ctrl - q) => {
+                if self.keybindings.contains_key(&key_combination){
+                    match self.keybindings[&key_combination].as_str() {
+                        "exit" => {
                             self.exit = true;
                         }
-                        key!(home) => {
+                        "reload" => {
+                            panic!("IMPLEMENT RELOAD");
+                        }
+                        "select_first" => {
                             self.path_manager.select_first();
                         }
-                        key!(end) => {
+                        "select_last" => {
                             self.path_manager.select_last();
                         }
-                        key!(up) | key!(ctrl - k) => {
+
+                        "select_previous" => {
                             self.prev_widget.reset_scroll();
                             self.path_manager.select_previous();
                         }
-                        key!(down) | key!(ctrl - j) => {
+                        "selet_next" => {
                             self.prev_widget.reset_scroll();
                             self.path_manager.select_next();
                         }
-                        key!(left) | key!(ctrl - h) => {
+                        "go_out" => {
                             self.path_manager.go_out()?;
                         }
-                        key!(right) | key!(ctrl - l) => {
+                        "go_into" => {
                             self.path_manager.go_into()?;
                         }
-                        key!(alt - h) => {
+
+                        "select_multiple" => {
+                            panic!("IMPLEMENT")
+                        }
+                        "select_all" => {
+                            panic!("IMPLEMENT")
+                        }
+
+                        "cut" =>{
+                            panic!("IMPLEMENT")
+                        }
+                        "copy" =>{
+                            panic!("IMPLEMENT")
+                        }
+                        "paste" =>{
+                            panic!("IMPLEMENT")
+                        }
+                        "new" =>{
+                            panic!("IMPLEMENT")
+                        }
+                        "delete" =>{
+                            panic!("IMPLEMENT")
+                        }
+
+                        "home" => {
                             self.path_manager.load_path(std::env::var("HOME").unwrap())?;
                         }
-                        key!(enter) => {
+                        "open" => {
                             self.path_manager.open_selected()?;
                         }
-                        key!(space) => {
+                        "go_into_or_open" => {
                             self.path_manager.go_into_or_open_selected()?;
                         }
-                        key!(ctrl - e) => {
+                        "open_on_explorer" => {
                             self.path_manager.open_selected_on_explorer()?;
                         }
-                        key!(ctrl - t) => {
+
+                        "toggle_preview" => {
                             self.toggle_preview = !self.toggle_preview;
                         }
-                        key!(pagedown) => {
+                        "scroll_down_preview" => {
                             self.prev_widget.scroll_down();
                         }
-                        key!(pageup) => {
+                        "scroll_up_preview" => {
                             self.prev_widget.scroll_up();
                         }
-                        key!(esc) | key!(backspace) => {
+
+                        "clear_filter" => {
                             self.path_manager.clear_filter();
                         }
                         _ => {
-                            if let Some(letter) = key_combination.as_letter() {
-                                self.path_manager.filter_dir_list_word(letter);
-                            } else {
-                                do_update = false;
-                            }
+                            panic!("IMPLEMENT CUSTOM COMMAND")
                         }
                     }
-                    if do_update {
-                        self.update_widgets();
-                    }
+                }else if let Some(letter) = key_combination.as_letter() {
+                    self.path_manager.filter_dir_list_word(letter);
+                } else {
+                    do_update = false;
+                }
+                if do_update {
+                    self.update_widgets();
                 }
             }
-            _ => {}
-        }
         Ok(())
     }
 }
