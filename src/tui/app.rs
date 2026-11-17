@@ -1,10 +1,10 @@
-use core::panic;
-use std::{collections::HashMap, str::FromStr};
-
 use super::widgets::{DirWidget, PreviewWidget};
 use crate::util::{path_manager::PathManager, reader};
 use ansi_to_tui::IntoText;
-use color_eyre::{Result, eyre::{Error, eyre}};
+use color_eyre::{
+    Result,
+    eyre::{Error, eyre},
+};
 use crokey::{Combiner, KeyCombination};
 use crossterm::event::{self, Event, read as read_input};
 use ratatui::{
@@ -13,6 +13,7 @@ use ratatui::{
     style::Stylize,
     widgets::{Block, Paragraph},
 };
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug)]
 pub struct App {
@@ -23,7 +24,7 @@ pub struct App {
     dir_widget: DirWidget,
     prev_widget: PreviewWidget,
     toggle_preview: bool,
-    keybindings: HashMap<KeyCombination, String>
+    keybindings: HashMap<KeyCombination, String>,
 }
 
 impl Default for App {
@@ -36,7 +37,7 @@ impl Default for App {
             dir_widget: DirWidget::default(),
             prev_widget: PreviewWidget::default(),
             toggle_preview: false,
-            keybindings: HashMap::new()
+            keybindings: HashMap::new(),
         }
     }
 }
@@ -87,7 +88,6 @@ impl App {
     }
 
     fn load_configs(&mut self) {
-
         let mut load = |conf: serde_json::Value| -> Result<()> {
             //TODO appeareance settings
             let Some(_a) = conf["appearence"].as_object() else {
@@ -98,8 +98,9 @@ impl App {
             };
 
             for (keyc, command) in k {
-                if let Some(command) = command.as_str() 
-                && let Ok(k) = KeyCombination::from_str(keyc){
+                if let Some(command) = command.as_str()
+                    && let Ok(k) = KeyCombination::from_str(keyc)
+                {
                     self.keybindings.insert(k, command.to_string());
                 }
             }
@@ -107,109 +108,69 @@ impl App {
             Ok(())
         };
 
-        reader::read_config().and_then(&mut load)
-        .unwrap_or_else( |_|
-            load(reader::default_config()).expect("Failed to load default config")
-        );
+        reader::read_config()
+            .and_then(&mut load)
+            .unwrap_or_else(|_| {
+                load(reader::default_config()).expect("Failed to load default config")
+            });
     }
 
     fn handle_events(&mut self) -> Result<()> {
         if let Ok(Event::Key(key_event)) = read_input()
-            && let Some(key_combination) = self.combiner.transform(key_event) {
-                let mut do_update = true;
+            && let Some(key_combination) = self.combiner.transform(key_event)
+        {
+            let mut do_update = true;
 
-                if self.keybindings.contains_key(&key_combination){
-                    match self.keybindings[&key_combination].as_str() {
-                        "exit" => {
-                            self.exit = true;
-                        }
-                        "reload" => {
-                            panic!("IMPLEMENT RELOAD");
-                        }
-                        "select_first" => {
-                            self.path_manager.select_first();
-                        }
-                        "select_last" => {
-                            self.path_manager.select_last();
-                        }
+            if self.keybindings.contains_key(&key_combination) {
+                match self.keybindings[&key_combination].as_str() {
+                    "exit" => self.exit = true,
+                    "reload" => self.load_configs(),
+                    "select_first" => self.path_manager.select_first(),
+                    "select_last" => self.path_manager.select_last(),
 
-                        "select_previous" => {
-                            self.prev_widget.reset_scroll();
-                            self.path_manager.select_previous();
-                        }
-                        "selet_next" => {
-                            self.prev_widget.reset_scroll();
-                            self.path_manager.select_next();
-                        }
-                        "go_out" => {
-                            self.path_manager.go_out()?;
-                        }
-                        "go_into" => {
-                            self.path_manager.go_into()?;
-                        }
-
-                        "select_multiple" => {
-                            panic!("IMPLEMENT")
-                        }
-                        "select_all" => {
-                            panic!("IMPLEMENT")
-                        }
-
-                        "cut" =>{
-                            panic!("IMPLEMENT")
-                        }
-                        "copy" =>{
-                            panic!("IMPLEMENT")
-                        }
-                        "paste" =>{
-                            panic!("IMPLEMENT")
-                        }
-                        "new" =>{
-                            panic!("IMPLEMENT")
-                        }
-                        "delete" =>{
-                            panic!("IMPLEMENT")
-                        }
-
-                        "home" => {
-                            self.path_manager.load_path(std::env::var("HOME").unwrap())?;
-                        }
-                        "open" => {
-                            self.path_manager.open_selected()?;
-                        }
-                        "go_into_or_open" => {
-                            self.path_manager.go_into_or_open_selected()?;
-                        }
-                        "open_on_explorer" => {
-                            self.path_manager.open_selected_on_explorer()?;
-                        }
-
-                        "toggle_preview" => {
-                            self.toggle_preview = !self.toggle_preview;
-                        }
-                        "scroll_down_preview" => {
-                            self.prev_widget.scroll_down();
-                        }
-                        "scroll_up_preview" => {
-                            self.prev_widget.scroll_up();
-                        }
-
-                        "clear_filter" => {
-                            self.path_manager.clear_filter();
-                        }
-                        _ => {
-                            panic!("IMPLEMENT CUSTOM COMMAND")
-                        }
+                    "select_previous" => {
+                        self.prev_widget.reset_scroll();
+                        self.path_manager.select_previous();
                     }
-                }else if let Some(letter) = key_combination.as_letter() {
-                    self.path_manager.filter_dir_list_word(letter);
-                } else {
-                    do_update = false;
+                    "select_next" => {
+                        self.prev_widget.reset_scroll();
+                        self.path_manager.select_next();
+                    }
+                    "go_out" => self.path_manager.go_out()?,
+                    "go_into" => self.path_manager.go_into()?,
+
+                    "select_multiple" => return Err(eyre!("IMPLEMENT")),
+                    "select_all" => return Err(eyre!("IMPLEMENT")),
+
+                    "cut" => self.path_manager.cut_selected()?,
+                    "copy" => self.path_manager.copy_selected()?,
+                    "paste" => self.path_manager.paste_selected()?,
+                    "new" => return Err(eyre!("IMPLEMENT")),
+                    "delete" => self.path_manager.delete_selected()?,
+
+                    "home" => self
+                        .path_manager
+                        .load_path(std::env::var("HOME").unwrap())?,
+                    "open" => self.path_manager.open_selected()?,
+                    "go_into_or_open" => self.path_manager.go_into_or_open_selected()?,
+                    "open_on_explorer" => self.path_manager.open_selected_on_explorer()?,
+
+                    "toggle_preview" => self.toggle_preview = !self.toggle_preview,
+                    "scroll_down_preview" => self.prev_widget.scroll_down(),
+                    "scroll_up_preview" => self.prev_widget.scroll_up(),
+
+                    "clear_filter" => self.path_manager.clear_filter(),
+                    _ => return Err(eyre!("IMPLEMENT CUSTOM COMMAND")),
                 }
-                if do_update {
-                    self.update_widgets();
-                }
+            } else if let Some(letter) = key_combination.as_letter() {
+                self.path_manager.filter_dir_list_word(letter);
+            } else {
+                do_update = false;
             }
+            if do_update {
+                self.update_widgets();
+            }
+        }
         Ok(())
     }
 }

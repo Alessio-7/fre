@@ -7,8 +7,8 @@
         
         "up"        : "select_previous",
         "ctrl-k"    : "select_previous",
-        "down"      : "selet_next",
-        "ctrl-j"    : "selet_next",
+        "down"      : "select_next",
+        "ctrl-j"    : "select_next",
         "left"      : "go_out",
         "ctrl-h"    : "go_out",
         "right"     : "go_into",

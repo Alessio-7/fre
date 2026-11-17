@@ -39,8 +39,10 @@ pub enum FileType {
     Dir,
     Symlink,
     File(String),
+    Pdf,
+    Image,
     Error,
-    Empty
+    Empty,
 }
 
 impl FileType {
@@ -49,11 +51,13 @@ impl FileType {
             FileType::Dir => '',
             FileType::Symlink => '',
             FileType::Error => '󰡯',
+            FileType::Image => '󰈟',
+            FileType::Pdf => '',
             FileType::File(extension) => match extension.as_str() {
-                "png" | "jpg" | "webp" | "tif" | "svg" => '󰈟',
+                // "png" | "jpg" | "webp" | "tif" | "svg" => '󰈟',
+                // "pdf" => '',
                 "txt" => '',
                 "zip" | "tar" => '󰛫',
-                "pdf" => '',
                 "conf" | "config" | "env" | "rasi" | "toml" | "ini" => '',
                 "lock" => '',
                 "old" => '󰩹',
@@ -86,7 +90,7 @@ impl FileType {
 
                 _ => ' ',
             },
-            _ => ' '
+            _ => ' ',
         }
     }
 

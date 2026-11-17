@@ -1,7 +1,11 @@
 use super::fileinfo::{FileInfo, FileType};
 use color_eyre::{Result, eyre::eyre};
-use std::{fs::{self, File, FileType as _FileType}, io::BufReader, path::PathBuf};
 use serde_json::{Value, from_reader as read_json};
+use std::{
+    fs::{self, File, FileType as _FileType},
+    io::BufReader,
+    path::PathBuf,
+};
 
 fn convert_file_type(ftype: _FileType, fname: &str) -> FileType {
     if ftype.is_dir() {
@@ -11,16 +15,18 @@ fn convert_file_type(ftype: _FileType, fname: &str) -> FileType {
     } else {
         let i = fname.rfind('.').unwrap_or(fname.len() - 1);
         if i < fname.len() - 1 {
-            FileType::File(fname[i + 1..].to_string())
+            let extension = fname.get(i + 1..).unwrap_or("");
+            match extension {
+                "pdf" => FileType::Pdf,
+                "png" | "jpg" | "jpeg" | "webp" | "tif" | "svg" => FileType::Image,
+                _ => FileType::File(extension.to_string()),
+            }
         } else {
             FileType::Error
         }
     }
 }
-pub(super) fn read_file(
-    path: &String,
-    sort_fun: fn(Vec<FileInfo>) -> Vec<FileInfo>,
-) -> FileInfo {
+pub(super) fn read_file(path: &String, sort_fun: fn(Vec<FileInfo>) -> Vec<FileInfo>) -> FileInfo {
     let i = path.rfind('/').unwrap_or(0);
     let file_name = path.get(i + 1..).unwrap_or(path);
     let file_type = match fs::metadata(path) {
@@ -28,10 +34,8 @@ pub(super) fn read_file(
         Err(_) => FileType::Error,
     };
 
-    
-
-    let content = if file_type.is_dir() {
-        match fs::read_dir(path) {
+    let content = match file_type {
+        FileType::Dir | FileType::Symlink => match fs::read_dir(path) {
             Ok(rd) => sort_fun(
                 rd.filter_map(|entry| {
                     let entry = entry.ok()?;
@@ -49,12 +53,13 @@ pub(super) fn read_file(
             .map(|info| format!("{}  {}\n", info.file_type.icon(), info.name))
             .collect(),
             Err(_) => "Could not read dir contents".to_string(),
-        }
-    } else {
-        match fs::read_to_string(path) {
+        },
+        FileType::Image => "Image file".to_string(),
+        FileType::File(_) => match fs::read_to_string(path) {
             Ok(c) => c,
             Err(e) => format!("Could not read \n{}", e),
-        }
+        },
+        _ => "Could not read file".to_string(),
     };
 
     FileInfo {
@@ -103,7 +108,6 @@ pub fn read_config() -> Result<Value> {
         let _ = fs::write(p, default);
         return Ok(default_config());
     };
-    
-    read_json(BufReader::new(f))
-        .map_err(|e| eyre!(e.to_string()))
+
+    read_json(BufReader::new(f)).map_err(|e| eyre!(e.to_string()))
 }

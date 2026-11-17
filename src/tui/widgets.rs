@@ -29,7 +29,7 @@ impl Widget for &PathWidget {
         let mut block = Block::bordered()
             .borders(Borders::BOTTOM)
             .style(DIR_WIDGET_STYLE);
-            //.title_bottom(Line::from(" Home: Ctrl - H ").right_aligned());
+        //.title_bottom(Line::from(" Home: Ctrl - H ").right_aligned());
 
         if let Some(f) = self.filter.as_ref() {
             //block = block.title_bottom(Line::from(format!(" Filter: '{f}' ")).left_aligned());
