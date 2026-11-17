@@ -7,6 +7,26 @@ use std::{
     path::PathBuf,
 };
 
+pub fn default_config() -> Value {
+    let default = include_str!("sample_conf.json");
+    serde_json::from_str(default).unwrap()
+}
+
+pub fn read_config() -> Result<Value> {
+    let default = include_str!("sample_conf.json");
+
+    let mut p = PathBuf::from(std::env::var("HOME").unwrap());
+    p.push(".config/fre");
+    fs::create_dir_all(&p)?;
+    p.push("conf.json");
+    let Ok(f) = File::open(&p) else {
+        let _ = fs::write(p, default);
+        return Ok(default_config());
+    };
+
+    read_json(BufReader::new(f)).map_err(|e| eyre!(e.to_string()))
+}
+
 fn convert_file_type(ftype: _FileType, fname: &str) -> FileType {
     if ftype.is_dir() {
         FileType::Dir
@@ -54,7 +74,8 @@ pub(super) fn read_file(path: &String, sort_fun: fn(Vec<FileInfo>) -> Vec<FileIn
             .collect(),
             Err(_) => "Could not read dir contents".to_string(),
         },
-        FileType::Image => "Image file".to_string(),
+        FileType::Pdf => path.clone(),
+        FileType::Image => path.clone(),
         FileType::File(_) => match fs::read_to_string(path) {
             Ok(c) => c,
             Err(e) => format!("Could not read \n{}", e),
@@ -90,24 +111,8 @@ fn single_read_from_path(&self, path: &String) -> Vec<FileInfo> {
     Vec::new()
     //leggi solo le cose in questo path
 }
-    */
 
-pub fn default_config() -> Value {
-    let default = include_str!("sample_conf.json");
-    serde_json::from_str(default).unwrap()
+pub(super) fn read_image(path: &String) -> {
+
 }
-
-pub fn read_config() -> Result<Value> {
-    let default = include_str!("sample_conf.json");
-
-    let mut p = PathBuf::from(std::env::var("HOME").unwrap());
-    p.push(".config/fre");
-    fs::create_dir_all(&p)?;
-    p.push("conf.json");
-    let Ok(f) = File::open(&p) else {
-        let _ = fs::write(p, default);
-        return Ok(default_config());
-    };
-
-    read_json(BufReader::new(f)).map_err(|e| eyre!(e.to_string()))
-}
+*/

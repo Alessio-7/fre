@@ -147,6 +147,7 @@ impl App {
                     "paste" => self.path_manager.paste_selected()?,
                     "new" => return Err(eyre!("IMPLEMENT")),
                     "delete" => self.path_manager.delete_selected()?,
+                    "rename" => return Err(eyre!("IMPLEMENT")),
 
                     "home" => self
                         .path_manager

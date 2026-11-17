@@ -21,7 +21,9 @@
         "ctrl-c"    : "copy",
         "ctrl-v"    : "paste",
         "ctrl-n"    : "new",
-        "del"       : "delete",      
+        "del"       : "delete",
+        "f2"        : "rename",
+        
 
         "alt-h"     : "home",
         "enter"     : "open",

@@ -1,5 +1,6 @@
-use crate::util::fileinfo::FileInfo;
+use crate::util::fileinfo::{FileInfo, FileType};
 use crate::util::path_manager::PathManager;
+use color_eyre::eyre::Result;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
@@ -9,6 +10,9 @@ use ratatui::{
         Block, BorderType, Borders, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
     },
 };
+use ratatui_image::StatefulImage;
+use ratatui_image::picker::Picker;
+use ratatui_image::protocol::StatefulProtocol;
 
 const FOREGROUND: Color = Color::Rgb(226, 228, 220);
 const HIGHLIGHT_FOREGROUND: Color = Color::Rgb(245, 89, 5);
@@ -89,6 +93,7 @@ pub(super) struct PreviewWidget {
     file_info: FileInfo,
     scroll: u16,
     layout_file_preview: Layout,
+    picker: Picker,
 }
 
 impl Default for PreviewWidget {
@@ -97,6 +102,7 @@ impl Default for PreviewWidget {
             file_info: FileInfo::default(),
             scroll: 0,
             layout_file_preview: Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]),
+            picker: Picker::from_query_stdio().expect("Cant load image picker"),
         }
     }
 }
@@ -117,6 +123,13 @@ impl PreviewWidget {
     pub(super) fn scroll_down(&mut self) {
         self.scroll = self.scroll.saturating_add(SCROLL_FORCE);
     }
+
+    fn image_state(&self) -> Result<StatefulProtocol> {
+        let dyn_img = image::ImageReader::open(&self.file_info.content)?
+            .with_guessed_format()?
+            .decode()?;
+        Ok(self.picker.new_resize_protocol(dyn_img))
+    }
 }
 
 impl Widget for &PreviewWidget {
@@ -129,20 +142,33 @@ impl Widget for &PreviewWidget {
 
         let name_line = Line::from(self.file_info.name.clone());
 
-        let content_par = Paragraph::new(self.file_info.content.clone())
-            .block(
-                Block::new()
-                    .borders(Borders::TOP)
-                    .style(PREVIEW_WIDGET_STYLE),
-            )
-            .style(Style::new().fg(FOREGROUND))
-            .scroll((self.scroll, 0));
-
         let _area = block.inner(area);
         let l = self.layout_file_preview.split(_area);
 
         block.render(area, buf);
         name_line.render(l[0], buf);
-        content_par.render(l[1], buf);
+
+        let b = Block::new()
+            .borders(Borders::TOP)
+            .style(PREVIEW_WIDGET_STYLE);
+
+        match self.file_info.file_type {
+            FileType::Pdf => {
+                Paragraph::new(self.file_info.content.clone())
+                    .block(b)
+                    .render(l[1], buf);
+            }
+            FileType::Image => match self.image_state() {
+                Ok(mut img_state) => StatefulImage::default().render(l[1], buf, &mut img_state),
+                Err(e) => Paragraph::new(format!("{}", e)).block(b).render(l[1], buf),
+            },
+            _ => {
+                Paragraph::new(self.file_info.content.clone())
+                    .block(b)
+                    .style(Style::new().fg(FOREGROUND))
+                    .scroll((self.scroll, 0))
+                    .render(l[1], buf);
+            }
+        }
     }
 }
