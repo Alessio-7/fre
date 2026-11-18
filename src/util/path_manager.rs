@@ -1,6 +1,7 @@
 use super::fileinfo::FileInfo;
 use super::reader;
 use color_eyre::Result;
+use color_eyre::eyre::eyre;
 
 fn sort(mut v: Vec<FileInfo>) -> Vec<FileInfo> {
     v.sort_by_key(|info| (!info.file_type.is_dir(), info.name.to_lowercase()));
@@ -83,21 +84,26 @@ impl PathManager {
         }
     }
 
-    fn get_selected(&self) -> Option<&FileInfo> {
-        let i = self.filtered_dir_list.get(self.selected_index)?;
-        self.dir_list.get(*i)
+    fn get_selected_and_path(&self) -> Result<(&FileInfo, String)> {
+        if let Some(i) = self.filtered_dir_list.get(self.selected_index)
+            && let Some(info) = self.dir_list.get(*i)
+        {
+            Ok((info, concat_path(&self.path, &info.name)))
+        } else {
+            Err(eyre!("Can not read file"))
+        }
     }
 
-    fn get_selected_path(&self) -> Option<String> {
-        let i = self.filtered_dir_list.get(self.selected_index)?;
-        let info = self.dir_list.get(*i)?;
-        Some(concat_path(&self.path, &info.name))
+    fn get_selected(&self) -> Result<&FileInfo> {
+        self.get_selected_and_path().map(|(info, _)| info)
     }
 
-    fn get_selected_and_path(&self) -> Option<(&FileInfo, String)> {
-        let i = self.filtered_dir_list.get(self.selected_index)?;
-        let info = self.dir_list.get(*i)?;
-        Some((info, concat_path(&self.path, &info.name)))
+    fn get_selected_path(&self) -> Result<String> {
+        self.get_selected_and_path().map(|(_, path)| path)
+    }
+
+    pub fn get_selected_name(&self) -> Result<String> {
+        self.get_selected().map(|info| info.name.clone();
     }
 
     pub fn get_dir_list(&self) -> Vec<&FileInfo> {
@@ -109,7 +115,7 @@ impl PathManager {
 
     pub fn get_file_preview(&self) -> FileInfo {
         //TODO loader and see if already loaded
-        if let Some(r) = self.get_selected_path() {
+        if let Ok(r) = self.get_selected_path() {
             reader::read_file(&r, sort)
         } else {
             FileInfo::empty()
@@ -167,9 +173,8 @@ impl PathManager {
     }
 
     pub fn go_into(&mut self) -> Result<()> {
-        if let Some((info, p)) = self.get_selected_and_path()
-            && info.file_type.is_dir()
-        {
+        let (info, p) = self.get_selected_and_path()?;
+        if info.file_type.is_dir() {
             self.last_selected_index = self.selected_index;
             self.selected_index = 0;
             self.load_path(p)?;
@@ -178,18 +183,16 @@ impl PathManager {
     }
 
     pub fn cut_selected(&mut self) -> Result<()> {
-        if let Some(p) = self.get_selected_path() {
-            self.do_cut = true;
-            self.copy_path = p;
-        }
+        let p = self.get_selected_path()?;
+        self.do_cut = true;
+        self.copy_path = p;
         Ok(())
     }
 
     pub fn copy_selected(&mut self) -> Result<()> {
-        if let Some(p) = self.get_selected_path() {
-            self.do_cut = false;
-            self.copy_path = p;
-        }
+        let p = self.get_selected_path()?;
+        self.do_cut = false;
+        self.copy_path = p;
         Ok(())
     }
 
@@ -208,43 +211,47 @@ impl PathManager {
     }
 
     pub fn delete_selected(&mut self) -> Result<()> {
-        if let Some((info, p)) = self.get_selected_and_path() {
-            if info.file_type.is_dir() {
-                std::fs::remove_dir_all(p)?;
-            } else {
-                std::fs::remove_file(p)?;
-            }
-            self.load_path(self.path.clone())?;
+        let (info, p) = self.get_selected_and_path()?;
+        if info.file_type.is_dir() {
+            std::fs::remove_dir_all(p)?;
+        } else {
+            std::fs::remove_file(p)?;
         }
+        self.load_path(self.path.clone())?;
+        Ok(())
+    }
+
+    pub fn rename_selected(&mut self, new_name: String) -> Result<()> {
+        let p = self.get_selected_path()?;
+        let new_path = concat_path(&self.path, &new_name);
+        std::fs::rename(p, new_path)?;
+        self.load_path(self.path.clone())?;
         Ok(())
     }
 
     pub fn open_selected(&self) -> Result<()> {
-        if let Some((info, p)) = self.get_selected_and_path() {
-            if info.file_type.is_dir() {
-                open::with_detached(p, "kitty")?;
-            } else {
-                open::that_detached(p)?;
-            }
+        let (info, p) = self.get_selected_and_path()?;
+        if info.file_type.is_dir() {
+            open::with_detached(p, "kitty")?;
+        } else {
+            open::that_detached(p)?;
         }
         Ok(())
     }
 
     pub fn go_into_or_open_selected(&mut self) -> Result<()> {
-        if let Some(info) = self.get_selected() {
-            if info.file_type.is_dir() {
-                self.go_into()?;
-            } else {
-                self.open_selected()?;
-            }
+        let info = self.get_selected()?;
+        if info.file_type.is_dir() {
+            self.go_into()?;
+        } else {
+            self.open_selected()?;
         }
         Ok(())
     }
 
     pub fn open_selected_on_explorer(&self) -> Result<()> {
-        if let Some(p) = self.get_selected_path() {
-            open::with_detached(p, "nemo")?;
-        }
+        let p = self.get_selected_path()?;
+        open::with_detached(p, "nemo")?;
         Ok(())
     }
 }

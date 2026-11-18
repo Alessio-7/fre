@@ -1,4 +1,4 @@
-use super::widgets::{DirWidget, PreviewWidget};
+use super::widgets::{DirWidget, PreviewWidget, TextInputWidget};
 use crate::util::{path_manager::PathManager, reader};
 use ansi_to_tui::IntoText;
 use color_eyre::{
@@ -25,6 +25,8 @@ pub struct App {
     prev_widget: PreviewWidget,
     toggle_preview: bool,
     keybindings: HashMap<KeyCombination, String>,
+    in_text_input_mode: bool,
+    text_input_widget: TextInputWidget,
 }
 
 impl Default for App {
@@ -38,6 +40,8 @@ impl Default for App {
             prev_widget: PreviewWidget::default(),
             toggle_preview: false,
             keybindings: HashMap::new(),
+            in_text_input_mode: false,
+            text_input_widget: TextInputWidget::default(),
         }
     }
 }
@@ -120,8 +124,12 @@ impl App {
             && let Some(key_combination) = self.combiner.transform(key_event)
         {
             let mut do_update = true;
-
-            if self.keybindings.contains_key(&key_combination) {
+            if self.in_text_input_mode {
+                if self.text_input_widget.key_event(key_combination) {
+                    self.in_text_input_mode = false;
+                    self.path_manager.rename_selected(self.text_input_widget.text.clone())?;
+                }
+            } else if self.keybindings.contains_key(&key_combination) {
                 match self.keybindings[&key_combination].as_str() {
                     "exit" => self.exit = true,
                     "reload" => self.load_configs(),
@@ -147,8 +155,10 @@ impl App {
                     "paste" => self.path_manager.paste_selected()?,
                     "new" => return Err(eyre!("IMPLEMENT")),
                     "delete" => self.path_manager.delete_selected()?,
-                    "rename" => return Err(eyre!("IMPLEMENT")),
-
+                    "rename" => {
+                        self.in_text_input_mode = true;
+                        self.text_input_widget.update("Rename:".to_string(), self.path_manager.get_selected_name());
+                    }
                     "home" => self
                         .path_manager
                         .load_path(std::env::var("HOME").unwrap())?,
@@ -168,6 +178,7 @@ impl App {
             } else {
                 do_update = false;
             }
+
             if do_update {
                 self.update_widgets();
             }

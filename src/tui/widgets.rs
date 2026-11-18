@@ -1,6 +1,7 @@
 use crate::util::fileinfo::{FileInfo, FileType};
 use crate::util::path_manager::PathManager;
 use color_eyre::eyre::Result;
+use crokey::key;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
@@ -170,5 +171,78 @@ impl Widget for &PreviewWidget {
                     .render(l[1], buf);
             }
         }
+    }
+}
+
+#[derive(Debug, Default)]
+pub(super) struct TextInputWidget {
+    prompt: String,
+    pub text: String,
+    cursor_position: usize,
+    cursor_x: u16,
+    cursor_y: u16,
+}
+
+impl TextInputWidget {
+    pub(super) fn update(&mut self, prompt: String, text: String) {
+        self.prompt = prompt;
+        self.text = text;
+        self.cursor_position = self.text.len();
+    }
+
+    pub(super) fn key_event(&mut self, key: crokey::KeyCombination) -> bool {
+        match key {
+            key!(enter) => {
+                return true;
+            }
+            key!(backspace) => {
+                if self.cursor_position > 0 {
+                    self.cursor_position -= 1;
+                    self.text.remove(self.cursor_position);
+                }
+            }
+            key!(delete) => {
+                if self.cursor_position < self.text.len() {
+                    self.text.remove(self.cursor_position);
+                }
+            }
+            key!(left) => {
+                if self.cursor_position > 0 {
+                    self.cursor_position -= 1;
+                }
+            }
+            key!(right) => {
+                if self.cursor_position < self.text.len() {
+                    self.cursor_position += 1;
+                }
+            }
+            _ => {
+                if let Some(c) = key.as_letter() {
+                    self.text.insert(self.cursor_position, c);
+                    self.cursor_position += 1;
+                } 
+            }
+        };
+        false
+    }
+}
+
+impl Widget for &mut TextInputWidget {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let popup_area = area
+            .centered(Constraint::Ratio(1, 2), Constraint::Ratio(1, 2));
+        let block = Block::bordered()
+            .style(PREVIEW_WIDGET_STYLE)
+            .title(self.prompt.clone());
+
+        let par = Paragraph::new(self.text.clone())
+            .style(Style::new().fg(FOREGROUND));
+
+        let _area = block.inner(popup_area);
+        self.cursor_x = _area.x + self.cursor_position as u16;
+        self.cursor_y = _area.y;
+
+        block.render(popup_area, buf);
+        par.render(_area, buf);
     }
 }
