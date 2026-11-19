@@ -1,15 +1,14 @@
 use super::widgets::{DirWidget, PreviewWidget, TextInputWidget};
 use crate::util::{path_manager::PathManager, reader};
-use ansi_to_tui::IntoText;
 use color_eyre::{
     Result,
     eyre::{Error, eyre},
 };
-use crokey::{Combiner, KeyCombination};
+use crokey::{Combiner, KeyCombination, key};
 use crossterm::event::{self, Event, read as read_input};
 use ratatui::{
     DefaultTerminal, Frame,
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Position},
     style::Stylize,
     widgets::{Block, Paragraph},
 };
@@ -69,18 +68,26 @@ impl App {
 
         let message = format!("Attempted Path: {}\n{}", self.path_manager.path, e);
 
-        let par = Paragraph::new(message.as_bytes().into_text().unwrap());
+        let par = Paragraph::new(message);
         frame.render_widget(par, block.inner(popup_area));
         frame.render_widget(block, popup_area);
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&mut self, frame: &mut Frame) {
         if !self.toggle_preview {
             let l = self.layout.split(frame.area());
             frame.render_widget(&self.dir_widget, l[0]);
             frame.render_widget(&self.prev_widget, l[1]);
         } else {
             frame.render_widget(&self.dir_widget, frame.area());
+        }
+
+        if self.in_text_input_mode {
+            frame.render_widget(&mut self.text_input_widget, frame.area());
+            frame.set_cursor_position(Position {
+                x: self.text_input_widget.cursor_x,
+                y: self.text_input_widget.cursor_y,
+            });
         }
     }
 
@@ -125,9 +132,12 @@ impl App {
         {
             let mut do_update = true;
             if self.in_text_input_mode {
-                if self.text_input_widget.key_event(key_combination) {
+                if key_combination == key!(esc) {
                     self.in_text_input_mode = false;
-                    self.path_manager.rename_selected(self.text_input_widget.text.clone())?;
+                } else if self.text_input_widget.key_event(key_combination) {
+                    self.in_text_input_mode = false;
+                    self.path_manager
+                        .rename_selected(self.text_input_widget.text.clone())?;
                 }
             } else if self.keybindings.contains_key(&key_combination) {
                 match self.keybindings[&key_combination].as_str() {
@@ -157,7 +167,10 @@ impl App {
                     "delete" => self.path_manager.delete_selected()?,
                     "rename" => {
                         self.in_text_input_mode = true;
-                        self.text_input_widget.update("Rename:".to_string(), self.path_manager.get_selected_name());
+                        self.text_input_widget.update(
+                            "Rename File:".to_string(),
+                            self.path_manager.get_selected_name()?,
+                        );
                     }
                     "home" => self
                         .path_manager

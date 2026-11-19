@@ -2,6 +2,8 @@ use crate::util::fileinfo::{FileInfo, FileType};
 use crate::util::path_manager::PathManager;
 use color_eyre::eyre::Result;
 use crokey::key;
+use ratatui::style::Stylize;
+use ratatui::widgets::Clear;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
@@ -179,8 +181,8 @@ pub(super) struct TextInputWidget {
     prompt: String,
     pub text: String,
     cursor_position: usize,
-    cursor_x: u16,
-    cursor_y: u16,
+    pub cursor_x: u16,
+    pub cursor_y: u16,
 }
 
 impl TextInputWidget {
@@ -220,7 +222,7 @@ impl TextInputWidget {
                 if let Some(c) = key.as_letter() {
                     self.text.insert(self.cursor_position, c);
                     self.cursor_position += 1;
-                } 
+                }
             }
         };
         false
@@ -229,20 +231,20 @@ impl TextInputWidget {
 
 impl Widget for &mut TextInputWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let popup_area = area
-            .centered(Constraint::Ratio(1, 2), Constraint::Ratio(1, 2));
+        let popup_area = area.centered(Constraint::Max(60), Constraint::Length(3));
         let block = Block::bordered()
-            .style(PREVIEW_WIDGET_STYLE)
+            .on_black()
+            .style(DIR_WIDGET_STYLE)
             .title(self.prompt.clone());
-
-        let par = Paragraph::new(self.text.clone())
-            .style(Style::new().fg(FOREGROUND));
-
+        Clear.render(popup_area, buf);
         let _area = block.inner(popup_area);
+        Paragraph::new(self.text.clone())
+            .on_black()
+            .style(Style::new().fg(FOREGROUND))
+            .block(block)
+            .render(popup_area, buf);
+
         self.cursor_x = _area.x + self.cursor_position as u16;
         self.cursor_y = _area.y;
-
-        block.render(popup_area, buf);
-        par.render(_area, buf);
     }
 }

@@ -36,11 +36,15 @@ impl PathManager {
         self.selected_index = 0;
     }
 
-    pub fn load_path(&mut self, path: String) -> Result<()> {
-        self.dir_list = sort(reader::read_from_path(&path)?);
+    pub fn reload_path(&mut self) -> Result<()> {
+        self.dir_list = sort(reader::read_from_path(&self.path)?);
         self.clear_filter();
-        self.path = path;
         Ok(())
+    }
+
+    pub fn load_path(&mut self, path: String) -> Result<()> {
+        self.path = path;
+        self.reload_path()
         //TODO immagazina tutte le altre informazioni
     }
 
@@ -84,6 +88,18 @@ impl PathManager {
         }
     }
 
+    fn select_by_name(&mut self, name: &str) -> Result<()> {
+        //TODO write it better
+        if let Ok(i) = self.filtered_dir_list.binary_search_by_key(&name, |&idx| {
+            self.dir_list[self.filtered_dir_list[idx]].name.as_str()
+        }) {
+            self.selected_index = i;
+            Ok(())
+        } else {
+            Err(eyre!("Could not find the file"))
+        }
+    }
+
     fn get_selected_and_path(&self) -> Result<(&FileInfo, String)> {
         if let Some(i) = self.filtered_dir_list.get(self.selected_index)
             && let Some(info) = self.dir_list.get(*i)
@@ -103,7 +119,7 @@ impl PathManager {
     }
 
     pub fn get_selected_name(&self) -> Result<String> {
-        self.get_selected().map(|info| info.name.clone();
+        self.get_selected().map(|info| info.name.clone())
     }
 
     pub fn get_dir_list(&self) -> Vec<&FileInfo> {
@@ -205,7 +221,7 @@ impl PathManager {
             } else {
                 std::fs::copy(&self.copy_path, &new_path)?;
             }
-            self.load_path(self.path.clone())?;
+            self.reload_path()?;
         }
         Ok(())
     }
@@ -217,16 +233,15 @@ impl PathManager {
         } else {
             std::fs::remove_file(p)?;
         }
-        self.load_path(self.path.clone())?;
-        Ok(())
+        self.reload_path()
     }
 
     pub fn rename_selected(&mut self, new_name: String) -> Result<()> {
         let p = self.get_selected_path()?;
         let new_path = concat_path(&self.path, &new_name);
         std::fs::rename(p, new_path)?;
-        self.load_path(self.path.clone())?;
-        Ok(())
+        self.reload_path()?;
+        self.select_by_name(&new_name)
     }
 
     pub fn open_selected(&self) -> Result<()> {
