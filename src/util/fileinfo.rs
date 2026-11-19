@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 #[derive(Debug)]
 pub struct FileInfo {
     pub file_type: FileType,
@@ -30,6 +32,12 @@ impl Default for FileInfo {
             name: "default file".to_string(),
             content: "Not human readable".to_string(),
         }
+    }
+}
+
+impl Borrow<str> for FileInfo {
+    fn borrow(&self) -> &str {
+        &self.name
     }
 }
 

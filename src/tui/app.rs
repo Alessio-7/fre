@@ -12,7 +12,7 @@ use ratatui::{
     style::Stylize,
     widgets::{Block, Paragraph},
 };
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, process::{Command, Stdio}, str::FromStr};
 
 #[derive(Debug)]
 pub struct App {
@@ -184,10 +184,23 @@ impl App {
                     "scroll_up_preview" => self.prev_widget.scroll_up(),
 
                     "clear_filter" => self.path_manager.clear_filter(),
-                    _ => return Err(eyre!("IMPLEMENT CUSTOM COMMAND")),
+                    comm => {
+                        let full_cmd = comm.replace("{path}", &self.path_manager.get_selected_path()?);
+                        let mut parts = full_cmd.split_whitespace();
+                        if let Some(program) = parts.next() {
+                            Command::new(program)
+                                .args(parts)
+                                .current_dir(&self.path_manager.path)
+                                .stdout(Stdio::null())
+                                .status()?;
+                            self.path_manager.reload_path()?;
+                        }else {
+                            return Err(eyre!("Could not execute command \n{}", comm));
+                        }
+                    }
                 }
             } else if let Some(letter) = key_combination.as_letter() {
-                self.path_manager.filter_dir_list_word(letter);
+                self.path_manager.push_filter(letter);
             } else {
                 do_update = false;
             }

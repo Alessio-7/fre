@@ -20,7 +20,6 @@ fn concat_path(path1: &String, path2: &String) -> String {
 pub struct PathManager {
     pub path: String,
     pub selected_index: usize,
-    last_selected_index: usize,
     dir_list: Vec<FileInfo>,
     filtered_dir_list: Vec<usize>,
     filter: String,
@@ -67,8 +66,7 @@ impl PathManager {
     }
     */
 
-    pub fn filter_dir_list_word(&mut self, letter: char) {
-        self.filter.push(letter);
+    fn filter_dir_list_word(&mut self) {
         let re = regex::Regex::new(&format!(r"(?i)^[^a-z]*{}", self.filter)).unwrap();
         self.filtered_dir_list.clear();
         for i in 0..self.dir_list.len() {
@@ -80,6 +78,11 @@ impl PathManager {
         self.selected_index = 0;
     }
 
+    pub fn push_filter(&mut self, letter: char) {
+        self.filter.push(letter);
+        self.filter_dir_list_word();
+    }
+
     pub fn get_filter(&self) -> Option<String> {
         if self.filter.is_empty() {
             None
@@ -89,14 +92,15 @@ impl PathManager {
     }
 
     fn select_by_name(&mut self, name: &str) -> Result<()> {
-        //TODO write it better
-        if let Ok(i) = self.filtered_dir_list.binary_search_by_key(&name, |&idx| {
-            self.dir_list[self.filtered_dir_list[idx]].name.as_str()
-        }) {
+        if let Some(&i) = self
+            .filtered_dir_list
+            .iter()
+            .find(|&&idx| self.dir_list[self.filtered_dir_list[idx]].name == name.trim())
+        {
             self.selected_index = i;
             Ok(())
         } else {
-            Err(eyre!("Could not find the file"))
+            Err(eyre!("Could not find the file {}", name))
         }
     }
 
@@ -114,7 +118,7 @@ impl PathManager {
         self.get_selected_and_path().map(|(info, _)| info)
     }
 
-    fn get_selected_path(&self) -> Result<String> {
+    pub fn get_selected_path(&self) -> Result<String> {
         self.get_selected_and_path().map(|(_, path)| path)
     }
 
@@ -179,19 +183,19 @@ impl PathManager {
         };
         let i = p.rfind('/').unwrap();
         let pnew = self.path.get(..i).unwrap().to_string();
+        let name = p.get(i + 1..).unwrap().to_string();
         if pnew.is_empty() {
             self.load_path("/".to_string())?;
         } else {
             self.load_path(pnew)?;
         }
-        self.selected_index = self.last_selected_index;
+        self.select_by_name(&name)?;
         Ok(())
     }
 
     pub fn go_into(&mut self) -> Result<()> {
         let (info, p) = self.get_selected_and_path()?;
         if info.file_type.is_dir() {
-            self.last_selected_index = self.selected_index;
             self.selected_index = 0;
             self.load_path(p)?;
         }
@@ -233,7 +237,11 @@ impl PathManager {
         } else {
             std::fs::remove_file(p)?;
         }
-        self.reload_path()
+        let f = self.filter.clone();
+        self.reload_path()?;
+        self.filter = f;
+        self.filter_dir_list_word();
+        Ok(())
     }
 
     pub fn rename_selected(&mut self, new_name: String) -> Result<()> {

@@ -36,14 +36,12 @@ impl Widget for &PathWidget {
         let mut block = Block::bordered()
             .borders(Borders::BOTTOM)
             .style(DIR_WIDGET_STYLE);
-        //.title_bottom(Line::from(" Home: Ctrl - H ").right_aligned());
 
         if let Some(f) = self.filter.as_ref() {
-            //block = block.title_bottom(Line::from(format!(" Filter: '{f}' ")).left_aligned());
             block = block.title_bottom(Line::from(format!(" '{f}' ")).centered());
         }
 
-        let p = Line::from(self.path.to_string());
+        let p = Line::from(self.path.as_str());
 
         let _area = block.inner(area);
         block.render(area, buf);
@@ -68,7 +66,6 @@ impl DirWidget {
             .map(|info| ListItem::new(format!("{}  {}", info.file_type.icon(), info.name)))
             .collect();
         self.list_state.select(Some(pm.selected_index));
-        //TODO levare quel clone
     }
 }
 

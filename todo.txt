@@ -1,12 +1,13 @@
-- previous selected index when going back
-
 logic:
     - ctrl + z, storing commands in a stack and launching the defined "inverse command"
+    - preloading the next and previous files
+    - threaded images
+    - pdf
+    - selection
 
 option file:
     - preload dirs
     - number of subdir loaded
 
 keybindings:
-    - copy, cut, paste, new, rm
     - complete mouse compatibility

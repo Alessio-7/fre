@@ -1,5 +1,7 @@
 {
     "keybindings" : {
+        "ctrl-u"    : "unzip {path}",
+        
         "ctrl-q"    : "exit",
         "ctrl-r"    : "reload",
         "home"      : "select_first",
@@ -23,7 +25,6 @@
         "ctrl-n"    : "new",
         "del"       : "delete",
         "f2"        : "rename",
-        
 
         "alt-h"     : "home",
         "enter"     : "open",
